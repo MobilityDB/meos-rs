@@ -22,10 +22,10 @@ fn main() {
         let meos_path = std::env::var("DEP_MEOSSRC_SEARCH").unwrap();
 
         // Tell cargo to tell rustc to link the system meos shared library.
-        println!("cargo:rustc-link-search={meos_path}");
+        println!("cargo:rustc-link-search={meos_path}/lib");
         println!("cargo:rustc-link-lib=meos");
 
-        meos_path
+        format!("{meos_path}/include")
     } else {
         let pk = detect_meos_via_pkg_config();
 

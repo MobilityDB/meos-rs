@@ -5,7 +5,7 @@ fn main() {
         .very_verbose(true)
         .build();
     println!("cargo:lib=meos");
-    let search_path = format!("{}/lib", libmeos.display());
+    let search_path = libmeos.display().to_string();
     assert!(std::path::Path::new(&search_path).exists());
     println!("cargo:search={}", search_path);
 }
