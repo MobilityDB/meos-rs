@@ -504,7 +504,7 @@ impl TBox {
 
     // pub fn from_tnumber(temporal: TNumber) -> Self {
     //     unsafe {
-    //         let inner = tnumber_to_meos_sys::tbox(temporal.inner);
+    //         let inner = tnumber_meos_sys::tbox(temporal.inner);
     //         Self::from_inner(inner)
     //     }
     // }

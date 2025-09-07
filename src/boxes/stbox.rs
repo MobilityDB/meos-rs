@@ -254,14 +254,14 @@ impl STBox {
 
     // pub fn from_tpoint(temporal: TPoint) -> Self {
     //     unsafe {
-    //         let inner = meos_sys::tpoint_to_stbox(temporal.inner());
+    //         let inner = meos_sys::tpoint_stbox(temporal.inner());
     //         Self::from_inner(inner)
     //     }
     // }
 
     #[cfg(feature = "geos")]
     pub fn geos_geometry(&self) -> Option<Geometry> {
-        // meos_sys::geo_as_ewkb(meos_sys::stbox_to_geo(box_))
+        // meos_sys::geo_as_ewkb(meos_sys::stbox_geo(box_))
         Geometry::new_from_wkb(self.as_wkb(WKBVariant::none())).ok()
     }
 

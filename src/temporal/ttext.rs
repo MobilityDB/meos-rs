@@ -1,5 +1,5 @@
 use std::{
-    ffi::{c_void, CStr, CString},
+    ffi::{CStr, CString},
     fmt::Debug,
     hash::Hash,
     ptr,
@@ -10,7 +10,7 @@ use chrono::{DateTime, TimeZone};
 
 use crate::{
     collections::{
-        base::*,
+        base::{Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
     },
     errors::ParseError,
@@ -37,7 +37,7 @@ fn from_ctext(ctext: *mut meos_sys::text) -> String {
         let string = CStr::from_ptr(cstr).to_str().unwrap();
         let result = string.to_owned();
 
-        libc::free(cstr as *mut _);
+        libc::free(cstr.cast());
 
         result
     }
@@ -56,7 +56,7 @@ macro_rules! impl_debug {
                 let c_str = unsafe { CStr::from_ptr(out_str) };
                 let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
                 let result = f.write_str(str);
-                unsafe { libc::free(out_str as *mut c_void) };
+                unsafe { libc::free(out_str.cast()) };
                 result
             }
         }
@@ -129,7 +129,7 @@ macro_rules! impl_ttext_traits {
                 impl_always_and_ever_value_equality_functions!(text, to_ctext);
                 fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
                     Self {
-                        _inner: ptr::NonNull::new(inner as *mut meos_sys::[<T $temporal_type>]).expect("Null pointers not allowed"),
+                        _inner: ptr::NonNull::new(inner.cast()).expect("Null pointers not allowed"),
                     }
                 }
 
@@ -319,9 +319,9 @@ impl TTextSequence {
     ///
     /// ## Returns
     /// A new temporal object.
-    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: String, time_span: TsTzSpan) -> Self {
+    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: &str, time_span: &TsTzSpan) -> Self {
         Self::from_inner(unsafe {
-            meos_sys::ttextseq_from_base_tstzspan(to_ctext(&value), time_span.inner())
+            meos_sys::ttextseq_from_base_tstzspan(to_ctext(value), time_span.inner())
         })
     }
 }
@@ -370,11 +370,11 @@ impl TTextSequenceSet {
     /// ## Returns
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
-        value: String,
-        time_span_set: TsTzSpanSet,
+        value: &str,
+        time_span_set: &TsTzSpanSet,
     ) -> Self {
         Self::from_inner(unsafe {
-            meos_sys::ttextseqset_from_base_tstzspanset(to_ctext(&value), time_span_set.inner())
+            meos_sys::ttextseqset_from_base_tstzspanset(to_ctext(value), time_span_set.inner())
         })
     }
 }

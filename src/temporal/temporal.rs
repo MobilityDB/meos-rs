@@ -1,12 +1,8 @@
-use std::{
-    ffi::{CStr, CString},
-    hash::Hash,
-    ptr,
-};
+use std::{ffi::CStr, hash::Hash, ptr};
 
 use crate::{
     collections::{
-        base::*,
+        base::{Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
     },
     factory,
@@ -381,9 +377,8 @@ pub trait Temporal: Collection + Hash {
     /// * `interpolation` - The interpolation type for the sequence.
     #[doc(alias = "temporal_to_tsequence")]
     fn to_sequence(&self, interpolation: TInterpolation) -> Self::TS {
-        let c_str = CString::new(interpolation.to_string()).unwrap();
         TSequence::from_inner(unsafe {
-            meos_sys::temporal_to_tsequence(self.inner(), c_str.as_ptr())
+            meos_sys::temporal_to_tsequence(self.inner(), interpolation as u32)
         })
     }
 
@@ -393,9 +388,8 @@ pub trait Temporal: Collection + Hash {
     /// * `interpolation` - The interpolation type for the sequence set.
     #[doc(alias = "temporal_to_tsequenceset")]
     fn to_sequence_set(&self, interpolation: TInterpolation) -> Self::TSS {
-        let c_str = CString::new(interpolation.to_string()).unwrap();
         TSequenceSet::from_inner(unsafe {
-            meos_sys::temporal_to_tsequenceset(self.inner(), c_str.as_ptr())
+            meos_sys::temporal_to_tsequenceset(self.inner(), interpolation as u32)
         })
     }
 
@@ -411,6 +405,7 @@ pub trait Temporal: Collection + Hash {
     fn append_instant(
         self,
         instant: Self::TI,
+        interpolation: TInterpolation,
         max_dist: Option<f64>,
         max_time: Option<TimeDelta>,
     ) -> Self::Enum {
@@ -422,8 +417,9 @@ pub trait Temporal: Collection + Hash {
         };
         factory::<Self::Enum>(unsafe {
             meos_sys::temporal_append_tinstant(
-                self.inner() as *mut _,
+                self.inner().cast_mut(),
                 instant.inner_as_tinstant(),
+                interpolation as u32,
                 max_dist.unwrap_or_default(),
                 max_time_ptr,
                 false,
@@ -439,7 +435,7 @@ pub trait Temporal: Collection + Hash {
     fn append_sequence(&self, sequence: Self::TS) -> Self::Enum {
         factory::<Self::Enum>(unsafe {
             meos_sys::temporal_append_tsequence(
-                self.inner() as *mut _,
+                self.inner().cast_mut(),
                 sequence.inner_as_tsequence(),
                 false,
             )
@@ -806,13 +802,13 @@ pub trait Temporal: Collection + Hash {
         let duration = create_interval(duration);
         let start = to_meos_timestamp(&start);
         let mut count = 0;
-        let _buckets = Vec::new().as_mut_ptr();
+        let mut _buckets = Vec::new();
         unsafe {
             let temps = meos_sys::temporal_time_split(
                 self.inner(),
                 ptr::addr_of!(duration),
                 start,
-                _buckets,
+                _buckets.as_mut_ptr(),
                 ptr::addr_of_mut!(count),
             );
 
@@ -1521,7 +1517,7 @@ macro_rules! impl_simple_traits_for_temporal {
         impl Drop for $type {
             fn drop(&mut self) {
                 unsafe {
-                    libc::free(self._inner.as_ptr() as *mut c_void);
+                    libc::free(self._inner.as_ptr().cast());
                 }
             }
         }

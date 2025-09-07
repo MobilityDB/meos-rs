@@ -124,7 +124,7 @@ pub trait TNumber: Temporal<TBB = TBox> {
     /// * `other` - A temporal number to compute the distance to.
     fn distance(&self, other: &Self) -> Self {
         Self::from_inner_as_temporal(unsafe {
-            meos_sys::distance_tnumber_tnumber(self.inner(), other.inner())
+            meos_sys::tdistance_tnumber_tnumber(self.inner(), other.inner())
         })
     }
 

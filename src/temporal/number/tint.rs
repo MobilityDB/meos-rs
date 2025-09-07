@@ -253,10 +253,10 @@ impl FromIterator<TInt> for TInt {
                 acc_value.append_sequence(item_value)
             }
             (TInt::Sequence(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Sequence(item_value)) => {
                 acc_value.append_sequence(item_value)

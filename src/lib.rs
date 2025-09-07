@@ -4,9 +4,16 @@
 #![doc(html_logo_url = "https://libmeos.org/brand.svg")]
 #![allow(refining_impl_trait)]
 #![allow(clippy::non_canonical_partial_ord_impl)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::used_underscore_binding)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::cast_sign_loss)]
 
 use std::{
-    ffi::{c_void, CStr, CString},
+    ffi::{CStr, CString},
     fmt::Debug,
     sync::Once,
 };
@@ -66,7 +73,6 @@ pub fn meos_initialize() {
     START.call_once(|| unsafe {
         meos_sys::meos_initialize();
         meos_sys::meos_initialize_error_handler(Some(error_handler));
-        libc::atexit(finalize);
     });
 }
 
@@ -79,12 +85,12 @@ pub fn meos_initialize_timezone(tz: &str) {
 }
 
 fn factory<T: MeosEnum>(temporal: *mut meos_sys::Temporal) -> T {
-    let temporal_type: TemporalSubtype = unsafe { (temporal.read().subtype as u32).into() };
+    let temporal_type: TemporalSubtype = unsafe { u32::from(temporal.read().subtype).into() };
     match temporal_type {
-        TemporalSubtype::Instant => T::from_instant(temporal as *mut _),
-        TemporalSubtype::Sequence => T::from_sequence(temporal as *mut _),
-        TemporalSubtype::SequenceSet => T::from_sequence_set(temporal as *mut _),
-        _ => unreachable!(),
+        TemporalSubtype::Instant => T::from_instant(temporal.cast()),
+        TemporalSubtype::Sequence => T::from_sequence(temporal.cast()),
+        TemporalSubtype::SequenceSet => T::from_sequence_set(temporal.cast()),
+        TemporalSubtype::Any => unreachable!(),
     }
 }
 
@@ -109,7 +115,6 @@ pub enum TemporalSubtype {
 impl From<u32> for TemporalSubtype {
     fn from(value: u32) -> Self {
         match value {
-            meos_sys::tempSubtype_ANYTEMPSUBTYPE => TemporalSubtype::Any,
             meos_sys::tempSubtype_TINSTANT => TemporalSubtype::Instant,
             meos_sys::tempSubtype_TSEQUENCE => TemporalSubtype::Sequence,
             meos_sys::tempSubtype_TSEQUENCESET => TemporalSubtype::SequenceSet,
@@ -201,7 +206,7 @@ pub trait MeosEnum: Debug + Sized + Temporal {
         };
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().unwrap().to_owned();
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast()) };
         str
     }
 

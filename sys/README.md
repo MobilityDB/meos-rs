@@ -47,6 +47,8 @@ You can also enable the `bundled` feature to build MEOS from scratch. Note you w
 sudo apt-get install libgeos-dev proj-bin libproj-dev proj-data libjson-c-dev
 ```
 
+Also you will need to delete the libmeos.so file if already present in your system to use the `bundled` feature, the default location is `/usr/local/lib`.
+
 ## Binding generation
 The 1.2 and 1.1 versions are already available as prebuilt bindings. Alternatively, you can generate your own bindings from your `libmeos` installation by specifying the `bindgen` feature.
 
