@@ -8,7 +8,17 @@ description = "static library build for meos-sys"
 repository = "https://github.com/MobilityDB/meos-rs"
 authors = ["David García Morillo <david.garcia.morillo@ulb.be>"]
 license-file = "../LICENSE"
-exclude = ["source/mobilitydb", "source/meos/examples"]
+exclude = [
+  "source/mobilitydb",
+  "source/meos/examples",
+  "source/doc/images",
+  "gsl/doc/*.info",
+  "gsl/doc/*.pdf",
+  "gsl/doc/*.png",
+  "gsl/doc/images",
+  "gsl/ampl",
+  "json-c/tests",
+]
 
 [dependencies]
 geos-sys = "2.0"
