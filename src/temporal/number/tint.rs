@@ -225,7 +225,10 @@ impl TSequenceSet for TIntSequenceSet {
 impl FromIterator<TIntSequence> for TIntSequenceSet {
     fn from_iter<T: IntoIterator<Item = TIntSequence>>(iter: T) -> Self {
         let vec: Vec<TIntSequence> = iter.into_iter().collect();
-        let mut vec_ptr: Vec<_> = vec.iter().map(|t| t.inner_as_tsequence()).collect();
+        let mut vec_ptr: Vec<_> = vec
+            .iter()
+            .map(|t| t.inner_as_tsequence() as *mut _)
+            .collect();
 
         let result = unsafe {
             meos_sys::tsequenceset_make(vec_ptr.as_mut_ptr(), vec_ptr.len() as i32, true)
@@ -253,10 +256,10 @@ impl FromIterator<TInt> for TInt {
                 acc_value.append_sequence(item_value)
             }
             (TInt::Sequence(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Sequence(item_value)) => {
                 acc_value.append_sequence(item_value)

@@ -107,19 +107,19 @@ pub trait SpanSet: Collection + FromIterator<Self::SpanType> {
 
     fn intersection(&self, other: &Self) -> Option<Self> {
         let result = unsafe { meos_sys::intersection_spanset_spanset(self.inner(), other.inner()) };
-        if !result.is_null() {
-            Some(Self::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(Self::from_inner(result))
         }
     }
 
     fn union(&self, other: &Self) -> Option<Self> {
         let result = unsafe { meos_sys::union_spanset_spanset(self.inner(), other.inner()) };
-        if !result.is_null() {
-            Some(Self::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(Self::from_inner(result))
         }
     }
 

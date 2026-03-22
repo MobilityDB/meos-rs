@@ -15,8 +15,8 @@ pub(crate) fn create_interval(t: chrono::TimeDelta) -> meos_sys::Interval {
 
 pub(crate) fn from_interval(interval: meos_sys::Interval) -> chrono::TimeDelta {
     let time_in_microseconds = interval.time;
-    let days = interval.day as i64;
-    let months = interval.month as i64;
+    let days = i64::from(interval.day);
+    let months = i64::from(interval.month);
 
     chrono::TimeDelta::microseconds(time_in_microseconds)
         + chrono::TimeDelta::days(days + months * 30) // meos assumes 30 days per month
