@@ -185,7 +185,7 @@ impl MeosBox for STBox {
     fn shift_scale_time(&self, delta: Option<TimeDelta>, width: Option<TimeDelta>) -> STBox {
         let d = {
             if let Some(d) = delta {
-                &*Box::new(create_interval(d)) as *const meos_sys::Interval
+                                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -193,7 +193,7 @@ impl MeosBox for STBox {
 
         let w = {
             if let Some(w) = width {
-                &*Box::new(create_interval(w)) as *const meos_sys::Interval
+                                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }
@@ -240,14 +240,18 @@ impl STBox {
         self._inner.as_ptr()
     }
 
+    /// # Panics
+    /// Panics if the inner pointer is null.
     pub fn from_inner(inner: *mut meos_sys::STBox) -> Self {
         Self {
             _inner: ptr::NonNull::new(inner).expect("Null pointers not allowed"),
         }
     }
 
+    /// # Panics
+    /// Panics if the geometry cannot be converted to WKB.
     #[cfg(feature = "geos")]
-    pub fn from_geos(value: Geometry) -> Self {
+    pub fn from_geos(value: &Geometry) -> Self {
         let v: Vec<u8> = value.to_wkb().unwrap().into();
         Self::from_wkb(&v)
     }
@@ -312,7 +316,7 @@ impl Debug for STBox {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }

@@ -40,6 +40,7 @@ pub(crate) mod utils;
 
 static START: Once = Once::new();
 
+#[allow(dead_code)]
 extern "C" fn finalize() {
     unsafe {
         meos_sys::meos_finalize();

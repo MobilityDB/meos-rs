@@ -10,7 +10,7 @@ use std::{
 use chrono::{DateTime, Datelike, TimeDelta, TimeZone, Utc};
 
 use crate::{
-    collections::base::*,
+    collections::{base::{Collection, Span, impl_collection}},
     errors::ParseError,
     utils::{create_interval, from_interval, from_meos_timestamp, to_meos_timestamp},
     BoundingBox,
@@ -23,7 +23,7 @@ pub struct TsTzSpan {
 impl Drop for TsTzSpan {
     fn drop(&mut self) {
         unsafe {
-            libc::free(self._inner.as_ptr() as *mut c_void);
+            libc::free(self._inner.as_ptr().cast::<c_void>());
         }
     }
 }
@@ -192,7 +192,7 @@ impl Span for TsTzSpan {
     fn shift_scale(&self, delta: Option<TimeDelta>, width: Option<TimeDelta>) -> TsTzSpan {
         let d = {
             if let Some(d) = delta {
-                &*Box::new(create_interval(d)) as *const meos_sys::Interval
+                                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -200,7 +200,7 @@ impl Span for TsTzSpan {
 
         let w = {
             if let Some(w) = width {
-                &*Box::new(create_interval(w)) as *const meos_sys::Interval
+                                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }
@@ -393,7 +393,7 @@ impl Debug for TsTzSpan {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }
@@ -429,10 +429,10 @@ impl BitAnd for TsTzSpan {
     fn bitand(self, other: Self) -> Self::Output {
         // Replace with actual function call or logic
         let result = unsafe { meos_sys::intersection_span_span(self.inner(), other.inner()) };
-        if !result.is_null() {
-            Some(TsTzSpan::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(TsTzSpan::from_inner(result))
         }
     }
 }

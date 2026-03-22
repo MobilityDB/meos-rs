@@ -10,45 +10,61 @@ You can also find it on [crates.io](https://crates.io/crates/meos).
 Versions >= 1.1 are supported.
 
 ## Usage
-You need to select as features what version do you want to obtain the bindings from (`v1_1`, `v1_2`), or alternatively, whether you want to build MEOS from scratch (`bundled`). This will mean adding to your `Cargo.toml`:
+
+Select a feature depending on your setup:
+
+| Feature    | Description |
+|------------|-------------|
+| `v1_1`     | Use prebuilt bindings for MEOS 1.1. Requires MEOS 1.1 installed on your system. |
+| `v1_2`     | Use prebuilt bindings for MEOS 1.2. Requires MEOS 1.2 installed on your system. |
+| `v1_3`     | Use prebuilt bindings for MEOS 1.3. Requires MEOS 1.3 installed on your system. |
+| `bundled`  | Build MEOS 1.3 from source. No system MEOS required. Implies `bindgen`. |
+| `bindgen`  | Generate bindings at build time from your system-installed MEOS headers. |
+
 ```toml
 # Cargo.toml
-[dependencies]
-meos-sys = { version = "0.1.8", features = ["v1_2"] }
+
+# Use system-installed MEOS 1.3 with prebuilt bindings
+meos-sys = { version = "0.1.9", features = ["v1_3"] }
+
+# Build MEOS from source (no system dependency needed)
+meos-sys = { version = "0.1.9", features = ["bundled"] }
+
+# Generate bindings from your system MEOS headers at build time
+meos-sys = { version = "0.1.9", features = ["v1_3", "bindgen"] }
 ```
 
 ## Build
 
-The build by default will use system-installed MEOS, `pkg-config` is used to automatically detect MEOS
+### System-installed MEOS (`v1_1`, `v1_2`, `v1_3`)
 
-If MEOS is in a custom location, you can instead use the `MEOS_LIB_DIR` environment variable to
-configure MEOS detection.
-
-If `MEOS_LIB_DIR` is not also in your system's standard dynamic library search
-path, you may need to add it to the dynamic library search path before
-running the tests or executable produced by `cargo build`.
-
-Linux:
+`pkg-config` is used to detect MEOS automatically. For MEOS 1.1 (which predates
+pkg-config support), set `MEOS_LIB_DIR` to point to the library directory:
 
 ```bash
-LD_LIBRARY_PATH=<path to MEOS>/lib MEOS_LIB_DIR=<path to MEOS>/lib MEOS_VERSION=<version> cargo test
+# Linux
+LD_LIBRARY_PATH=<path>/lib MEOS_LIB_DIR=<path>/lib cargo build
 
+# macOS
+DYLD_FALLBACK_LIBRARY_PATH=<path>/lib MEOS_LIB_DIR=<path>/lib cargo build
 ```
 
-MacOS:
+### Bundled (`bundled`)
 
-```bash
-DYLD_FALLBACK_LIBRARY_PATH=<path to MEOS>/lib MEOS_LIB_DIR=<path to MEOS>/lib MEOS_VERSION=<version> cargo test
+Builds MEOS 1.3 and all its dependencies (GEOS, PROJ, JSON-C, GSL) from the
+bundled source as static libraries. No system MEOS installation required.
 
-```
+> **Note:** If you have a system `libmeos.so` installed (e.g. at
+> `/usr/local/lib/libmeos.so`), remove or unload it before using `bundled` to
+> avoid conflicts.
 
-You can also enable the `bundled` feature to build MEOS from scratch. Note you will still have to have installed in your system GEOS, PROJ and JSON-C libraries. You can install all of them by running the following command in your (Debian based) machine:
-```bash
-sudo apt-get install libgeos-dev proj-bin libproj-dev proj-data libjson-c-dev
-```
+Compilation will take longer due to building all dependencies from source.
 
-Also you will need to delete the libmeos.so file if already present in your system to use the `bundled` feature, the default location is `/usr/local/lib`.
+### Bindgen (`bindgen`)
 
-## Binding generation
-The 1.2 and 1.1 versions are already available as prebuilt bindings. Alternatively, you can generate your own bindings from your `libmeos` installation by specifying the `bindgen` feature.
+Generates bindings at build time from your system-installed MEOS headers instead
+of using the prebuilt ones. Useful when your installed version differs slightly
+from the prebuilt snapshots. Requires `libclang` to be installed.
 
+When `bundled` is active, `bindgen` is implied automatically and generates
+bindings from the bundled source headers.

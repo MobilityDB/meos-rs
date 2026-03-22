@@ -11,6 +11,12 @@ license-file = "../LICENSE"
 exclude = ["source/mobilitydb", "source/meos/examples"]
 
 [dependencies]
+geos-sys = "2.0"
+proj-sys = "0.27"
+geos-src = "0.2"
+
+[features]
+bundled = ["geos-sys/static", "proj-sys/bundled_proj"]
 
 [build-dependencies]
 cmake = "0.1"

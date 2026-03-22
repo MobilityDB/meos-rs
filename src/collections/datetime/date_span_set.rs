@@ -9,7 +9,7 @@ use std::hash::Hash;
 use std::ops::{BitAnd, BitOr};
 
 use crate::collections::base::SpanSet;
-use crate::collections::base::*;
+use crate::collections::base::{Collection, Span, impl_collection, impl_iterator};
 use crate::errors::ParseError;
 use crate::utils::from_interval;
 
@@ -23,7 +23,7 @@ pub struct DateSpanSet {
 impl Drop for DateSpanSet {
     fn drop(&mut self) {
         unsafe {
-            libc::free(self._inner.as_ptr() as *mut c_void);
+            libc::free(self._inner.as_ptr().cast::<c_void>());
         }
     }
 }
@@ -291,7 +291,7 @@ impl Debug for DateSpanSet {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }

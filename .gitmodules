@@ -1,4 +1,10 @@
 [submodule "sys/meos-src/source"]
-	path = sys/meos-src/source
-	url = https://github.com/MobilityDB/MobilityDB.git
-	branch = stable-1.2
+        path = sys/meos-src/source
+        url = https://github.com/MobilityDB/MobilityDB.git
+        branch = stable-1.3
+[submodule "sys/meos-src/json-c"]
+	path = sys/meos-src/json-c
+	url = https://github.com/json-c/json-c.git
+[submodule "sys/meos-src/gsl"]
+	path = sys/meos-src/gsl
+	url = https://github.com/ampl/gsl.git

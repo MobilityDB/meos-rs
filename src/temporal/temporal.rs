@@ -163,10 +163,10 @@ pub trait Temporal: Collection + Hash {
     #[doc(alias = "temporal_instant_n")]
     fn instant_n(&self, n: i32) -> Option<Self::TI> {
         let result = unsafe { meos_sys::temporal_instant_n(self.inner(), n) };
-        if !result.is_null() {
-            Some(<Self::TI as TInstant>::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(<Self::TI as TInstant>::from_inner(result))
         }
     }
 
@@ -282,7 +282,7 @@ pub trait Temporal: Collection + Hash {
     /// Returns a new `Temporal` with the temporal dimension shifted by `delta`.
     ///
     /// ## Arguments
-    /// * `delta` - TimeDelta to shift the temporal dimension.
+    /// * `delta` - `TimeDelta` to shift the temporal dimension.
     #[doc(alias = "temporal_shift_scale_time")]
     fn shift_time(&self, delta: TimeDelta) -> Self {
         self.shift_scale_time(Some(delta), None)
@@ -291,7 +291,7 @@ pub trait Temporal: Collection + Hash {
     /// Returns a new `Temporal` scaled so the temporal dimension has duration `duration`.
     ///
     /// ## Arguments
-    /// * `duration` - TimeDelta representing the new temporal duration.
+    /// * `duration` - `TimeDelta` representing the new temporal duration.
     #[doc(alias = "temporal_shift_scale_time")]
     fn scale_time(&self, duration: TimeDelta) -> Self {
         self.shift_scale_time(None, Some(duration))
@@ -300,13 +300,13 @@ pub trait Temporal: Collection + Hash {
     /// Returns a new `Temporal` with the time dimension shifted and scaled.
     ///
     /// ## Arguments
-    /// * `shift` - TimeDelta to shift the time dimension.
-    /// * `duration` - TimeDelta representing the new temporal duration.
+    /// * `shift` - `TimeDelta` to shift the time dimension.
+    /// * `duration` - `TimeDelta` representing the new temporal duration.
     #[doc(alias = "temporal_shift_scale_time")]
     fn shift_scale_time(&self, shift: Option<TimeDelta>, duration: Option<TimeDelta>) -> Self {
         let d = {
             if let Some(d) = shift {
-                &*Box::new(create_interval(d)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -314,7 +314,7 @@ pub trait Temporal: Collection + Hash {
 
         let w = {
             if let Some(w) = duration {
-                &*Box::new(create_interval(w)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }
@@ -327,7 +327,7 @@ pub trait Temporal: Collection + Hash {
     /// Returns a new `Temporal` downsampled with respect to `duration`.
     ///
     /// ## Arguments
-    /// * `duration` - TimeDelta of the temporal tiles.
+    /// * `duration` - `TimeDelta` of the temporal tiles.
     /// * `start` - Start time of the temporal tiles.
     /// * `interpolation`- Interpolation of the resulting temporal object.
     #[doc(alias = "temporal_tsample")]
@@ -351,7 +351,7 @@ pub trait Temporal: Collection + Hash {
     /// Returns a new `Temporal` with precision reduced to `duration`.
     ///
     /// ## Arguments
-    /// * `duration` - TimeDelta of the temporal tiles.
+    /// * `duration` - `TimeDelta` of the temporal tiles.
     /// * `start` - Start time of the temporal tiles.
     #[doc(alias = "temporal_tprecision")]
     fn temporal_precision<Tz: TimeZone>(self, duration: TimeDelta, start: DateTime<Tz>) -> Self {
@@ -864,10 +864,10 @@ pub trait Temporal: Collection + Hash {
     #[doc(alias = "always_eq_temporal_temporal")]
     fn always_equal(&self, other: &Self) -> Option<bool> {
         let result = unsafe { meos_sys::always_eq_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -883,10 +883,10 @@ pub trait Temporal: Collection + Hash {
     #[doc(alias = "always_ne_temporal_temporal")]
     fn always_not_equal(&self, other: &Self) -> Option<bool> {
         let result = unsafe { meos_sys::always_ne_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -902,10 +902,10 @@ pub trait Temporal: Collection + Hash {
     #[doc(alias = "ever_eq_temporal_temporal")]
     fn ever_equal(&self, other: &Self) -> Option<bool> {
         let result = unsafe { meos_sys::ever_eq_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -921,10 +921,10 @@ pub trait Temporal: Collection + Hash {
     #[doc(alias = "ever_ne_temporal_temporal")]
     fn ever_not_equal(&self, other: &Self) -> Option<bool> {
         let result = unsafe { meos_sys::ever_ne_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1230,11 +1230,6 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "always_gt_temporal_temporal")]
     fn always_greater(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::always_gt_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
-            None
-        };
         if result != -1 {
             Some(result == 1)
         } else {
