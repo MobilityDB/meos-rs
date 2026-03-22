@@ -88,7 +88,7 @@ macro_rules! impl_tbool_traits {
                     unsafe {
                         let values = meos_sys::tbool_values(self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize)
+                        std::slice::from_raw_parts(values, count as usize).to_vec()
                     }
                 }
 
@@ -446,7 +446,7 @@ impl Temporal for TBool {
         unsafe {
             let values = meos_sys::tbool_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
+            std::slice::from_raw_parts(values, count as usize).to_vec()
         }
     }
 

@@ -228,9 +228,9 @@ impl Temporal for TGeomPoint {
         unsafe {
             let values = meos_sys::tgeo_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
-                .into_iter()
-                .map(gserialized_to_geometry)
+            std::slice::from_raw_parts(values, count as usize)
+                .iter()
+                .map(|&gs| gserialized_to_geometry(gs))
                 .map(Result::unwrap)
                 .collect()
         }

@@ -225,7 +225,7 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     fn as_wkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let ptr = meos_sys::temporal_as_wkb(self.inner(), variant.into(), &mut size);
+            let ptr = meos_sys::temporal_as_wkb(self.inner(), variant.into(), &raw mut size);
             std::slice::from_raw_parts(ptr, size)
         }
     }
@@ -237,7 +237,8 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let hexwkb_ptr = meos_sys::temporal_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let hexwkb_ptr =
+                meos_sys::temporal_as_hexwkb(self.inner(), variant.into(), &raw mut size);
 
             CStr::from_ptr(hexwkb_ptr).to_bytes()
         }

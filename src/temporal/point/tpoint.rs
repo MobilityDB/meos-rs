@@ -262,11 +262,11 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
         let result = unsafe { meos_sys::tgeo_stboxes(self.inner(), ptr::addr_of_mut!(count)) };
 
         unsafe {
-            Vec::from_raw_parts(result, count as usize, count as usize)
+            std::slice::from_raw_parts(result, count as usize)
                 .iter()
                 .map(|&stbox| {
                     let mut boxed_stbox = Box::new(stbox);
-                    let ptr: *mut meos_sys::STBox = &mut *boxed_stbox;
+                    let ptr: *mut meos_sys::STBox = &raw mut *boxed_stbox;
                     STBox::from_inner(ptr)
                 })
                 .collect()
@@ -440,9 +440,9 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
         let result =
             unsafe { meos_sys::tpoint_make_simple(self.inner(), ptr::addr_of_mut!(count)) };
         unsafe {
-            Vec::from_raw_parts(result, count as usize, count as usize)
-                .into_iter()
-                .map(factory::<Self::Enum>)
+            std::slice::from_raw_parts(result, count as usize)
+                .iter()
+                .map(|&temporal| factory::<Self::Enum>(temporal))
                 .collect()
         }
     }
@@ -1176,9 +1176,9 @@ macro_rules! impl_tpoint_traits {
                     unsafe {
                         let values = meos_sys::tgeo_values(self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize)
+                        std::slice::from_raw_parts(values, count as usize)
                             .into_iter()
-                            .map(gserialized_to_geometry)
+                            .map(|&gs| gserialized_to_geometry(gs))
                             .map(Result::unwrap)
                             .collect()
                     }

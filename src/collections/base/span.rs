@@ -47,7 +47,7 @@ pub trait Span: Collection {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let hexwkb_ptr = meos_sys::span_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let hexwkb_ptr = meos_sys::span_as_hexwkb(self.inner(), variant.into(), &raw mut size);
             CStr::from_ptr(hexwkb_ptr).to_bytes()
         }
     }

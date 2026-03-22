@@ -74,7 +74,7 @@ impl MeosBox for STBox {
     fn as_wkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let ptr = meos_sys::stbox_as_wkb(self.inner(), variant.into(), &mut size);
+            let ptr = meos_sys::stbox_as_wkb(self.inner(), variant.into(), &raw mut size);
             std::slice::from_raw_parts(ptr, size)
         }
     }
@@ -82,7 +82,7 @@ impl MeosBox for STBox {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let hexwkb_ptr = meos_sys::stbox_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let hexwkb_ptr = meos_sys::stbox_as_hexwkb(self.inner(), variant.into(), &raw mut size);
 
             CStr::from_ptr(hexwkb_ptr).to_bytes()
         }
@@ -185,7 +185,7 @@ impl MeosBox for STBox {
     fn shift_scale_time(&self, delta: Option<TimeDelta>, width: Option<TimeDelta>) -> STBox {
         let d = {
             if let Some(d) = delta {
-                                &raw const *Box::new(create_interval(d))
+                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -193,7 +193,7 @@ impl MeosBox for STBox {
 
         let w = {
             if let Some(w) = width {
-                                &raw const *Box::new(create_interval(w))
+                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }

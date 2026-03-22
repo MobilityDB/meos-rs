@@ -201,7 +201,7 @@ macro_rules! impl_temporal_for_tnumber {
                     unsafe {
                         let values = meos_sys::[<t $basic_type:lower _values>](self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize)
+                        std::slice::from_raw_parts(values, count as usize).to_vec()
                     }
                 }
 
@@ -345,7 +345,7 @@ macro_rules! impl_meos_enum {
                 unsafe {
                     let values = meos_sys::[<t $basic_type:lower _values>](self.inner(), ptr::addr_of_mut!(count));
 
-                    Vec::from_raw_parts(values, count as usize, count as usize)
+                    std::slice::from_raw_parts(values, count as usize).to_vec()
                 }
             }
 

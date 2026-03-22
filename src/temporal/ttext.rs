@@ -146,7 +146,7 @@ macro_rules! impl_ttext_traits {
                     unsafe {
                         let values = meos_sys::ttext_values(self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize).into_iter().map(from_ctext).collect()
+                        std::slice::from_raw_parts(values, count as usize).into_iter().map(|&ctext| from_ctext(ctext)).collect()
                     }
                 }
 
@@ -522,9 +522,9 @@ impl Temporal for TText {
         unsafe {
             let values = meos_sys::ttext_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
-                .into_iter()
-                .map(from_ctext)
+            std::slice::from_raw_parts(values, count as usize)
+                .iter()
+                .map(|v| from_ctext(*v))
                 .collect()
         }
     }

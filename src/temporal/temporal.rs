@@ -180,7 +180,7 @@ pub trait Temporal: Collection + Hash {
         unsafe {
             let instants = meos_sys::temporal_instants(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(instants, count as usize, count as usize)
+            std::slice::from_raw_parts(instants, count as usize)
                 .iter()
                 .map(|&instant| <Self::TI as TInstant>::from_inner(instant))
                 .collect()
@@ -245,7 +245,7 @@ pub trait Temporal: Collection + Hash {
         let timestamps =
             unsafe { meos_sys::temporal_timestamps(self.inner(), ptr::addr_of_mut!(count)) };
         unsafe {
-            Vec::from_raw_parts(timestamps, count as usize, count as usize)
+            std::slice::from_raw_parts(timestamps, count as usize)
                 .iter()
                 .map(|&timestamp| from_meos_timestamp(timestamp))
                 .collect()
@@ -262,7 +262,7 @@ pub trait Temporal: Collection + Hash {
         let segments =
             unsafe { meos_sys::temporal_segments(self.inner(), ptr::addr_of_mut!(count)) };
         unsafe {
-            Vec::from_raw_parts(segments, count as usize, count as usize)
+            std::slice::from_raw_parts(segments, count as usize)
                 .iter()
                 .map(|&segment| <Self::TS as TSequence>::from_inner(segment))
                 .collect()
@@ -812,7 +812,7 @@ pub trait Temporal: Collection + Hash {
                 ptr::addr_of_mut!(count),
             );
 
-            Vec::from_raw_parts(temps, count as usize, count as usize)
+            std::slice::from_raw_parts(temps, count as usize)
                 .iter()
                 .map(|&t| Temporal::from_inner_as_temporal(t))
                 .collect()
