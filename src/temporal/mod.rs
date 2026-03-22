@@ -10,7 +10,9 @@ pub use number::tnumber::TNumber;
 mod point;
 pub use point::tgeogpoint::*;
 pub use point::tgeompoint::*;
-pub use point::tpoint::*;
+pub use point::tgeography::*;
+pub use point::tgeometry::*;
+pub use point::tgeo::*;
 
 mod tbool;
 pub use tbool::*;

@@ -26,20 +26,10 @@ use super::tgeo::{
     impl_tpoint_traits, point_to_gserialized_geog, point_to_gserialized_geom, Point, TGeoTrait,
 };
 
-impl_tgeo_type!(TGeomPoint, false, tpointinst_make, tgeompoint_in, tgeompoint_from_mfjson);
-
-impl TGeomPointSequence {
-    pub fn direction(&self) -> f64 {
-        let mut result = 0.;
-        unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
-        result
-    }
-}
-
-impl TGeomPointSequenceSet {
-    pub fn direction(&self) -> f64 {
-        let mut result = 0.;
-        unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
-        result
-    }
-}
+impl_tgeo_type!(
+    TGeography,
+    true,
+    tgeoinst_make,
+    tgeography_in,
+    tgeography_from_mfjson
+);
