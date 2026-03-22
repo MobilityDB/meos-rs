@@ -39,7 +39,7 @@ pub trait Span: Collection {
     fn as_wkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size = 0;
-            let wkb = meos_sys::span_as_wkb(self.inner(), variant.into(), &mut size as *mut _);
+            let wkb = meos_sys::span_as_wkb(self.inner(), variant.into(), &raw mut size);
             std::slice::from_raw_parts(wkb, size)
         }
     }
@@ -47,7 +47,7 @@ pub trait Span: Collection {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let hexwkb_ptr = meos_sys::span_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let hexwkb_ptr = meos_sys::span_as_hexwkb(self.inner(), variant.into(), &raw mut size);
             CStr::from_ptr(hexwkb_ptr).to_bytes()
         }
     }
@@ -116,19 +116,19 @@ pub trait Span: Collection {
 
     fn intersection(&self, other: &Self) -> Option<Self> {
         let result = unsafe { meos_sys::intersection_span_span(self.inner(), other.inner()) };
-        if !result.is_null() {
-            Some(Self::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(Self::from_inner(result))
         }
     }
 
     fn union<T: SpanSet<Type = Self::Type>>(&self, other: &Self) -> Option<T> {
         let result = unsafe { meos_sys::union_span_span(self.inner(), other.inner()) };
-        if !result.is_null() {
-            Some(T::from_inner(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(T::from_inner(result))
         }
     }
 }

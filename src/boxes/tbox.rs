@@ -93,7 +93,7 @@ impl MeosBox for TBox {
     fn as_wkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let ptr = meos_sys::tbox_as_wkb(self.inner(), variant.into(), &mut size);
+            let ptr = meos_sys::tbox_as_wkb(self.inner(), variant.into(), &raw mut size);
             std::slice::from_raw_parts(ptr, size)
         }
     }
@@ -101,7 +101,7 @@ impl MeosBox for TBox {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let ptr = meos_sys::tbox_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let ptr = meos_sys::tbox_as_hexwkb(self.inner(), variant.into(), &raw mut size);
             CStr::from_ptr(ptr).to_bytes()
         }
     }
@@ -389,7 +389,7 @@ impl MeosBox for TBox {
     fn shift_scale_time(&self, delta: Option<TimeDelta>, width: Option<TimeDelta>) -> TBox {
         let d = {
             if let Some(d) = delta {
-                &*Box::new(create_interval(d)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -397,7 +397,7 @@ impl MeosBox for TBox {
 
         let w = {
             if let Some(w) = width {
-                &*Box::new(create_interval(w)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }
@@ -431,6 +431,8 @@ impl TBox {
         self._inner.as_ptr()
     }
 
+    /// # Panics
+    /// Panics if the inner pointer is null.
     pub fn from_inner(inner: *mut meos_sys::TBox) -> Self {
         Self {
             _inner: ptr::NonNull::new(inner).expect("Null pointers not allowed"),
@@ -494,17 +496,17 @@ impl TBox {
     /// # use meos::FloatSpan;
     ///
     /// let span: FloatSpan = (42.0..50.0).into();
-    /// let tbox = TBox::from_numeric_span(span);
+    /// let tbox = TBox::from_numeric_span(&span);
     /// assert_eq!(tbox.xmin().unwrap(), 42.0);
     /// assert_eq!(tbox.xmax().unwrap(), 50.0);
     /// ```
-    pub fn from_numeric_span(value: impl NumberSpan) -> Self {
+    pub fn from_numeric_span(value: &impl NumberSpan) -> Self {
         unsafe { Self::from_inner(meos_sys::span_to_tbox(value.inner())) }
     }
 
     // pub fn from_tnumber(temporal: TNumber) -> Self {
     //     unsafe {
-    //         let inner = tnumber_to_meos_sys::tbox(temporal.inner);
+    //         let inner = tnumber_meos_sys::tbox(temporal.inner);
     //         Self::from_inner(inner)
     //     }
     // }
@@ -615,7 +617,7 @@ impl TBox {
     /// assert_eq!(expanded_tbox.xmax(), Some(5.0));
     /// ```
     pub fn expand_value(&self, value: f64) -> TBox {
-        unsafe { Self::from_inner(meos_sys::tbox_expand_float(self.inner(), value)) }
+        unsafe { Self::from_inner(meos_sys::tfloatbox_expand(self.inner(), value)) }
     }
 
     /// Shifts and scales the X dimension of the `TBox`.
@@ -644,7 +646,7 @@ impl TBox {
         let d = delta.unwrap_or_default();
         let w = width.unwrap_or_default();
         let modified = unsafe {
-            meos_sys::tbox_shift_scale_float(self.inner(), d, w, delta.is_some(), width.is_some())
+            meos_sys::tfloatbox_shift_scale(self.inner(), d, w, delta.is_some(), width.is_some())
         };
         TBox::from_inner(modified)
     }
@@ -691,7 +693,7 @@ impl Debug for TBox {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }

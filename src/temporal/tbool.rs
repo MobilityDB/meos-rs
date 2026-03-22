@@ -1,5 +1,5 @@
 use std::{
-    ffi::{c_void, CStr, CString},
+    ffi::{CStr, CString},
     fmt::Debug,
     hash::Hash,
     ops::{BitAnd, BitOr},
@@ -11,7 +11,7 @@ use chrono::{DateTime, TimeZone};
 
 use crate::{
     collections::{
-        base::*,
+        base::{impl_collection, Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
     },
     errors::ParseError,
@@ -39,7 +39,7 @@ macro_rules! impl_debug {
                 let c_str = unsafe { CStr::from_ptr(out_str) };
                 let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
                 let result = f.write_str(str);
-                unsafe { libc::free(out_str as *mut c_void) };
+                unsafe { libc::free(out_str.cast()) };
                 result
             }
         }
@@ -47,7 +47,7 @@ macro_rules! impl_debug {
 }
 
 macro_rules! impl_tbool_traits {
-    ($type:ty, $temporal_type:ty) => {
+    ($type:ty) => {
         paste::paste! {
             impl Collection for $type {
                 impl_collection!(tnumber, bool);
@@ -71,7 +71,7 @@ macro_rules! impl_tbool_traits {
                 impl_always_and_ever_value_equality_functions!(bool);
                 fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
                     Self {
-                        _inner: ptr::NonNull::new(inner as *mut $temporal_type).expect("Null pointers not allowed"),
+                        _inner: ptr::NonNull::new(inner.cast()).expect("Null pointers not allowed"),
                     }
                 }
 
@@ -88,7 +88,7 @@ macro_rules! impl_tbool_traits {
                     unsafe {
                         let values = meos_sys::tbool_values(self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize)
+                        std::slice::from_raw_parts(values, count as usize).to_vec()
                     }
                 }
 
@@ -272,13 +272,13 @@ impl TInstant for TBoolInstant {
 
 impl TBoolTrait for TBoolInstant {}
 
-impl_tbool_traits!(TBoolInstant, meos_sys::TInstant);
+impl_tbool_traits!(TBoolInstant);
 
 pub struct TBoolSequence {
     _inner: ptr::NonNull<meos_sys::TSequence>,
 }
 impl TBoolSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -286,7 +286,7 @@ impl TBoolSequence {
     ///
     /// ## Returns
     /// A new temporal object.
-    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: bool, time_span: TsTzSpan) -> Self {
+    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: bool, time_span: &TsTzSpan) -> Self {
         Self::from_inner(unsafe { meos_sys::tboolseq_from_base_tstzspan(value, time_span.inner()) })
     }
 }
@@ -303,7 +303,7 @@ impl TSequence for TBoolSequence {
     }
 }
 
-impl_tbool_traits!(TBoolSequence, meos_sys::TSequence);
+impl_tbool_traits!(TBoolSequence);
 
 impl TBoolTrait for TBoolSequence {}
 
@@ -326,7 +326,7 @@ pub struct TBoolSequenceSet {
 }
 
 impl TBoolSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -336,7 +336,7 @@ impl TBoolSequenceSet {
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
         value: bool,
-        time_span_set: TsTzSpanSet,
+        time_span_set: &TsTzSpanSet,
     ) -> Self {
         Self::from_inner(unsafe {
             meos_sys::tboolseqset_from_base_tstzspanset(value, time_span_set.inner())
@@ -353,7 +353,7 @@ impl TSequenceSet for TBoolSequenceSet {
 }
 impl TBoolTrait for TBoolSequenceSet {}
 
-impl_tbool_traits!(TBoolSequenceSet, meos_sys::TSequenceSet);
+impl_tbool_traits!(TBoolSequenceSet);
 
 impl From<TBoolInstant> for TBool {
     fn from(value: TBoolInstant) -> Self {
@@ -446,7 +446,7 @@ impl Temporal for TBool {
         unsafe {
             let values = meos_sys::tbool_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
+            std::slice::from_raw_parts(values, count as usize).to_vec()
         }
     }
 
@@ -477,10 +477,10 @@ impl Temporal for TBool {
 
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::tbool_at_value(self.inner(), *value) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     /// Not implemented for `tbool` types

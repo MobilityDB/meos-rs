@@ -11,7 +11,7 @@ use chrono::{DateTime, TimeZone};
 use crate::{
     boxes::TBox,
     collections::{
-        base::*,
+        base::{impl_collection, Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
         number::IntSpanSet,
     },
@@ -99,7 +99,7 @@ macro_rules! impl_debug {
                 let c_str = unsafe { CStr::from_ptr(out_str) };
                 let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
                 let result = f.write_str(str);
-                unsafe { libc::free(out_str as *mut c_void) };
+                unsafe { libc::free(out_str.cast::<c_void>()) };
                 result
             }
         }
@@ -141,7 +141,7 @@ pub struct TIntSequence {
     _inner: ptr::NonNull<meos_sys::TSequence>,
 }
 impl TIntSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -149,7 +149,7 @@ impl TIntSequence {
     ///
     /// ## Returns
     /// A new temporal object.
-    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: i32, time_span: TsTzSpan) -> Self {
+    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: i32, time_span: &TsTzSpan) -> Self {
         Self::from_inner(unsafe { meos_sys::tintseq_from_base_tstzspan(value, time_span.inner()) })
     }
 }
@@ -196,7 +196,7 @@ pub struct TIntSequenceSet {
 }
 
 impl TIntSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -206,7 +206,7 @@ impl TIntSequenceSet {
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
         value: i32,
-        time_span_set: TsTzSpanSet,
+        time_span_set: &TsTzSpanSet,
     ) -> Self {
         Self::from_inner(unsafe {
             meos_sys::tintseqset_from_base_tstzspanset(value, time_span_set.inner())
@@ -225,7 +225,10 @@ impl TSequenceSet for TIntSequenceSet {
 impl FromIterator<TIntSequence> for TIntSequenceSet {
     fn from_iter<T: IntoIterator<Item = TIntSequence>>(iter: T) -> Self {
         let vec: Vec<TIntSequence> = iter.into_iter().collect();
-        let mut vec_ptr: Vec<_> = vec.iter().map(|t| t.inner_as_tsequence()).collect();
+        let mut vec_ptr: Vec<_> = vec
+            .iter()
+            .map(|t| t.inner_as_tsequence().cast_mut())
+            .collect();
 
         let result = unsafe {
             meos_sys::tsequenceset_make(vec_ptr.as_mut_ptr(), vec_ptr.len() as i32, true)
@@ -253,16 +256,15 @@ impl FromIterator<TInt> for TInt {
                 acc_value.append_sequence(item_value)
             }
             (TInt::Sequence(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Instant(item_value)) => {
-                acc_value.append_instant(item_value, None, None)
+                acc_value.append_instant(item_value, TInterpolation::Stepwise, None, None)
             }
             (TInt::SequenceSet(acc_value), TInt::Sequence(item_value)) => {
                 acc_value.append_sequence(item_value)
             }
-            (_, TInt::SequenceSet(_)) => unreachable!(),
-            (TInt::Instant(_), _) => unreachable!(),
+            (_, TInt::SequenceSet(_)) | (TInt::Instant(_), _) => unreachable!(),
         })
     }
 }

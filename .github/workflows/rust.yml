@@ -4,51 +4,84 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "stable-1.3" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  test-system:
+    name: Test (system MEOS)
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Print current working directory
-      run: pwd
 
-    # Install GEOS library
-    - name: Install GEOS
-      run: sudo apt-get install -y libgeos-dev
-
-    # Install PROJ library
-    - name: Install PROJ
-      run: sudo apt-get install proj-bin libproj-dev proj-data
-
-    # Install JSON-C library
-    - name: Install JSON-C
-      run: sudo apt install libjson-c-dev
-
-    # Fetch and install MEOS library
-    - name: Fetch MEOS sources
-      run: git clone https://github.com/MobilityDB/MobilityDB.git
-
-    # Install MobilityDB
-    - name: Install MobilityDB
+    - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y --fix-missing libgeos-dev proj-bin libproj-dev proj-data libjson-c-dev libgsl-dev
+
+    - name: Install MEOS
+      run: |
+        git clone --branch stable-1.3 https://github.com/MobilityDB/MobilityDB.git
         mkdir MobilityDB/build
         cd MobilityDB/build
         cmake .. -DMEOS=on
         make -j
         sudo make install
-    
+
     - name: Add library to LDPATH
       run: echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> $GITHUB_ENV
 
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --no-default-features --features geos
+
+    - name: Clippy
+      run: cargo clippy --no-default-features --features geos -- -D warnings
 
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --no-default-features --features geos
+
+    - name: Download example data
+      run: |
+        mkdir -p data
+        curl -o data/ais_instants.csv https://raw.githubusercontent.com/MobilityDB/MobilityDB/master/meos/examples/data/ais_instants.csv
+
+    - name: Run examples
+      run: |
+        cargo run --example 01_hello_world --no-default-features --features geos
+        cargo run --example 02_ais_read --no-default-features --features geos
+        cargo run --example 03_ais_assemble --no-default-features --features geos
+
+  test-bundled:
+    name: Test (bundled MEOS)
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install build tools
+      run: sudo apt-get install -y cmake clang libclang-dev pkg-config sqlite3 libsqlite3-dev
+
+    - name: Build
+      run: cargo build --verbose --features bundled
+
+    - name: Clippy
+      run: cargo clippy --features bundled -- -D warnings
+
+    - name: Run tests
+      run: cargo test --verbose --features bundled
+
+    - name: Download example data
+      run: |
+        mkdir -p data
+        curl -o data/ais_instants.csv https://raw.githubusercontent.com/MobilityDB/MobilityDB/master/meos/examples/data/ais_instants.csv
+
+    - name: Run examples
+      run: |
+        cargo run --example 01_hello_world --features bundled
+        cargo run --example 02_ais_read --features bundled
+        cargo run --example 03_ais_assemble --features bundled

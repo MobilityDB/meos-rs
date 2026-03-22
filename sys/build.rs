@@ -22,10 +22,18 @@ fn main() {
         let meos_path = std::env::var("DEP_MEOSSRC_SEARCH").unwrap();
 
         // Tell cargo to tell rustc to link the system meos shared library.
-        println!("cargo:rustc-link-search={meos_path}");
-        println!("cargo:rustc-link-lib=meos");
+        println!("cargo:rustc-link-search=native={meos_path}/lib");
+        println!("cargo:rustc-link-lib=static=meos");
 
-        meos_path
+        println!("cargo:rustc-link-lib=static=json-c");
+        println!("cargo:rustc-link-lib=static=gsl");
+        println!("cargo:rustc-link-lib=static=gslcblas");
+
+        // Expose the path to spatial_ref_sys.csv for use in meos_initialize
+        let csv_path = std::path::Path::new(&meos_path).join("share/spatial_ref_sys.csv");
+        println!("cargo:SPATIAL_REF_SYS_CSV={}", csv_path.display());
+
+        format!("{meos_path}/include")
     } else {
         let pk = detect_meos_via_pkg_config();
 
@@ -38,20 +46,20 @@ fn main() {
                 }
                 // As a fallback, since pkg-config was not configured in meos until 1.2, we will try a default path.
                 if cfg!(feature = "v1_1") {
-                    let default_include_path = String::from("/usr/local/lib/");
+                    let default_lib_path = String::from("/usr/local/lib/");
                     let lib_dir_env = env::var_os("MEOS_LIB_DIR")
                         .map(OsString::into_string)
                         .transpose()
                         .ok()
                         .flatten()
-                        .unwrap_or(default_include_path.clone());
+                        .unwrap_or(default_lib_path);
 
                     // Tell cargo to look for shared libraries in the specified directory
                     println!("cargo:rustc-link-search={lib_dir_env}");
 
                     // Tell cargo to tell rustc to link the system meos shared library.
                     println!("cargo:rustc-link-lib=dylib=meos");
-                    default_include_path
+                    String::from("/usr/local/include/")
                 } else {
                     panic!("Could not detect MEOS using pkg-config.");
                 }

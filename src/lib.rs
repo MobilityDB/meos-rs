@@ -4,9 +4,19 @@
 #![doc(html_logo_url = "https://libmeos.org/brand.svg")]
 #![allow(refining_impl_trait)]
 #![allow(clippy::non_canonical_partial_ord_impl)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::used_underscore_binding)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::cast_sign_loss)]
 
 use std::{
-    ffi::{c_void, CStr, CString},
+    ffi::{CStr, CString},
     fmt::Debug,
     sync::Once,
 };
@@ -33,6 +43,7 @@ pub(crate) mod utils;
 
 static START: Once = Once::new();
 
+#[allow(dead_code)]
 extern "C" fn finalize() {
     unsafe {
         meos_sys::meos_finalize();
@@ -64,27 +75,32 @@ unsafe extern "C" fn error_handler(_error_level: i32, _error_code: i32, message:
 /// ```
 pub fn meos_initialize() {
     START.call_once(|| unsafe {
+        #[cfg(feature = "bundled")]
+        {
+            let path = CString::new(env!("MEOS_SPATIAL_REF_SYS_CSV")).unwrap();
+            meos_sys::meos_set_spatial_ref_sys_csv(path.as_ptr());
+        }
         meos_sys::meos_initialize();
         meos_sys::meos_initialize_error_handler(Some(error_handler));
-        libc::atexit(finalize);
     });
 }
 
 pub fn meos_initialize_timezone(tz: &str) {
     unsafe {
-        let ptr = CString::new(tz).unwrap();
+        #[allow(clippy::missing_panics_doc)]
+        let ptr = CString::new(tz).expect("Wrong timezone format");
 
         meos_sys::meos_initialize_timezone(ptr.as_ptr());
     }
 }
 
 fn factory<T: MeosEnum>(temporal: *mut meos_sys::Temporal) -> T {
-    let temporal_type: TemporalSubtype = unsafe { (temporal.read().subtype as u32).into() };
+    let temporal_type: TemporalSubtype = unsafe { u32::from(temporal.read().subtype).into() };
     match temporal_type {
-        TemporalSubtype::Instant => T::from_instant(temporal as *mut _),
-        TemporalSubtype::Sequence => T::from_sequence(temporal as *mut _),
-        TemporalSubtype::SequenceSet => T::from_sequence_set(temporal as *mut _),
-        _ => unreachable!(),
+        TemporalSubtype::Instant => T::from_instant(temporal.cast()),
+        TemporalSubtype::Sequence => T::from_sequence(temporal.cast()),
+        TemporalSubtype::SequenceSet => T::from_sequence_set(temporal.cast()),
+        TemporalSubtype::Any => unreachable!(),
     }
 }
 
@@ -109,7 +125,6 @@ pub enum TemporalSubtype {
 impl From<u32> for TemporalSubtype {
     fn from(value: u32) -> Self {
         match value {
-            meos_sys::tempSubtype_ANYTEMPSUBTYPE => TemporalSubtype::Any,
             meos_sys::tempSubtype_TINSTANT => TemporalSubtype::Instant,
             meos_sys::tempSubtype_TSEQUENCE => TemporalSubtype::Sequence,
             meos_sys::tempSubtype_TSEQUENCESET => TemporalSubtype::SequenceSet,
@@ -166,7 +181,10 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     /// ## Returns
     /// A merged temporal object.
     fn from_merge(temporals: &[Self]) -> Self {
-        let mut t_list: Vec<_> = temporals.iter().map(Self::inner).collect();
+        let mut t_list: Vec<*mut meos_sys::Temporal> = temporals
+            .iter()
+            .map(|t| Self::inner(t).cast_mut())
+            .collect();
         factory::<Self>(unsafe {
             meos_sys::temporal_merge_array(t_list.as_mut_ptr(), temporals.len() as i32)
         })
@@ -201,7 +219,7 @@ pub trait MeosEnum: Debug + Sized + Temporal {
         };
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().unwrap().to_owned();
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast()) };
         str
     }
 
@@ -212,7 +230,7 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     fn as_wkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let ptr = meos_sys::temporal_as_wkb(self.inner(), variant.into(), &mut size);
+            let ptr = meos_sys::temporal_as_wkb(self.inner(), variant.into(), &raw mut size);
             std::slice::from_raw_parts(ptr, size)
         }
     }
@@ -224,7 +242,8 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     fn as_hexwkb(&self, variant: WKBVariant) -> &[u8] {
         unsafe {
             let mut size: usize = 0;
-            let hexwkb_ptr = meos_sys::temporal_as_hexwkb(self.inner(), variant.into(), &mut size);
+            let hexwkb_ptr =
+                meos_sys::temporal_as_hexwkb(self.inner(), variant.into(), &raw mut size);
 
             CStr::from_ptr(hexwkb_ptr).to_bytes()
         }

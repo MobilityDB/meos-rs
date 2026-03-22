@@ -1,6 +1,6 @@
 [package]
 name = "meos-src"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 links = "meossrc"
 build = "build.rs"
@@ -8,9 +8,25 @@ description = "static library build for meos-sys"
 repository = "https://github.com/MobilityDB/meos-rs"
 authors = ["David García Morillo <david.garcia.morillo@ulb.be>"]
 license-file = "../LICENSE"
-exclude = ["source/mobilitydb", "source/meos/examples"]
+exclude = [
+  "source/mobilitydb",
+  "source/meos/examples",
+  "source/doc/images",
+  "gsl/doc/*.info",
+  "gsl/doc/*.pdf",
+  "gsl/doc/*.png",
+  "gsl/doc/images",
+  "gsl/ampl",
+  "json-c/tests",
+]
 
 [dependencies]
+geos-sys = "2.0"
+proj-sys = "0.27"
+geos-src = "0.2"
+
+[features]
+bundled = ["geos-sys/static", "proj-sys/bundled_proj"]
 
 [build-dependencies]
 cmake = "0.1"

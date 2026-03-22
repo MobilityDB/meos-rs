@@ -7,7 +7,10 @@ use std::{
     ptr,
 };
 
-use crate::{collections::base::*, errors::ParseError};
+use crate::{
+    collections::base::{impl_collection, Collection, Span},
+    errors::ParseError,
+};
 
 use super::number_span::NumberSpan;
 
@@ -18,7 +21,7 @@ pub struct FloatSpan {
 impl Drop for FloatSpan {
     fn drop(&mut self) {
         unsafe {
-            libc::free(self._inner.as_ptr() as *mut c_void);
+            libc::free(self._inner.as_ptr().cast::<c_void>());
         }
     }
 }
@@ -248,7 +251,8 @@ impl From<Range<f64>> for FloatSpan {
 
 impl From<Range<f32>> for FloatSpan {
     fn from(Range { start, end }: Range<f32>) -> Self {
-        let inner = unsafe { meos_sys::floatspan_make(start as f64, end as f64, true, false) };
+        let inner =
+            unsafe { meos_sys::floatspan_make(f64::from(start), f64::from(end), true, false) };
         Self::from_inner(inner)
     }
 }
@@ -263,7 +267,12 @@ impl From<RangeInclusive<f64>> for FloatSpan {
 impl From<RangeInclusive<f32>> for FloatSpan {
     fn from(range: RangeInclusive<f32>) -> Self {
         let inner = unsafe {
-            meos_sys::floatspan_make(*range.start() as f64, *range.end() as f64, true, true)
+            meos_sys::floatspan_make(
+                f64::from(*range.start()),
+                f64::from(*range.end()),
+                true,
+                true,
+            )
         };
         Self::from_inner(inner)
     }
@@ -276,7 +285,7 @@ impl Debug for FloatSpan {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }

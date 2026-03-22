@@ -1,6 +1,6 @@
 [package]
 name = "meos-sys"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["David García Morillo <david.garcia.morillo@ulb.be>"]
 
 repository = "https://github.com/MobilityDB/meos-rs"
@@ -14,17 +14,20 @@ edition = "2021"
 links = "meos"
 
 [dependencies]
-meos-src = { path = "./meos-src", version = "0.1.0", optional = true }
+meos-src = { path = "./meos-src", version = "0.2.0", optional = true }
+geos-sys = { version = "2.0", optional = true }
+proj-sys = { version = "0.27", optional = true }
 
 [build-dependencies]
 pkg-config = "0.3.30"
 cmake = "0.1"
-bindgen = { version = "0.70.1", optional = true }
+bindgen = { version = "0.72.1", optional = true }
 
 [features]
 default = []
 v1_1 = []
 v1_2 = []
+v1_3 = []
 
 bindgen = ["dep:bindgen"]
-bundled = ["bindgen", "dep:meos-src"]
+bundled = ["bindgen", "dep:meos-src", "meos-src/bundled", "dep:geos-sys", "geos-sys/static", "dep:proj-sys", "proj-sys/bundled_proj"]

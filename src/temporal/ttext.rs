@@ -1,5 +1,5 @@
 use std::{
-    ffi::{c_void, CStr, CString},
+    ffi::{CStr, CString},
     fmt::Debug,
     hash::Hash,
     ptr,
@@ -10,7 +10,7 @@ use chrono::{DateTime, TimeZone};
 
 use crate::{
     collections::{
-        base::*,
+        base::{Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
     },
     errors::ParseError,
@@ -37,7 +37,7 @@ fn from_ctext(ctext: *mut meos_sys::text) -> String {
         let string = CStr::from_ptr(cstr).to_str().unwrap();
         let result = string.to_owned();
 
-        libc::free(cstr as *mut _);
+        libc::free(cstr.cast());
 
         result
     }
@@ -56,7 +56,7 @@ macro_rules! impl_debug {
                 let c_str = unsafe { CStr::from_ptr(out_str) };
                 let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
                 let result = f.write_str(str);
-                unsafe { libc::free(out_str as *mut c_void) };
+                unsafe { libc::free(out_str.cast()) };
                 result
             }
         }
@@ -129,7 +129,7 @@ macro_rules! impl_ttext_traits {
                 impl_always_and_ever_value_equality_functions!(text, to_ctext);
                 fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
                     Self {
-                        _inner: ptr::NonNull::new(inner as *mut meos_sys::[<T $temporal_type>]).expect("Null pointers not allowed"),
+                        _inner: ptr::NonNull::new(inner.cast()).expect("Null pointers not allowed"),
                     }
                 }
 
@@ -146,7 +146,7 @@ macro_rules! impl_ttext_traits {
                     unsafe {
                         let values = meos_sys::ttext_values(self.inner(), ptr::addr_of_mut!(count));
 
-                        Vec::from_raw_parts(values, count as usize, count as usize).into_iter().map(from_ctext).collect()
+                        std::slice::from_raw_parts(values, count as usize).into_iter().map(|&ctext| from_ctext(ctext)).collect()
                     }
                 }
 
@@ -188,8 +188,8 @@ macro_rules! impl_ttext_traits {
                 }
                 fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
                     unsafe {
-                        let ctexts: Vec<_> = values.into_iter().map(|text| to_ctext(&text)).collect();
-                        let set = meos_sys::textset_make(ctexts.as_ptr() as *mut *const _, values.len() as i32);
+                        let mut ctexts: Vec<_> = values.into_iter().map(|text| to_ctext(&text)).collect();
+                        let set = meos_sys::textset_make(ctexts.as_mut_ptr(), values.len() as i32);
                         let result = meos_sys::temporal_at_values(self.inner(), set);
                         if !result.is_null() {
                             Some(factory::<Self::Enum>(result))
@@ -207,8 +207,8 @@ macro_rules! impl_ttext_traits {
 
                 fn minus_values(&self, values: &[Self::Type]) -> Self::Enum {
                     factory::<Self::Enum>(unsafe {
-                        let ctexts: Vec<_> = values.into_iter().map(|text| to_ctext(&text)).collect();
-                        let set = meos_sys::textset_make(ctexts.as_ptr() as *mut *const _, values.len() as i32);
+                        let mut ctexts: Vec<_> = values.into_iter().map(|text| to_ctext(&text)).collect();
+                        let set = meos_sys::textset_make(ctexts.as_mut_ptr(), values.len() as i32);
                         meos_sys::temporal_minus_values(self.inner(), set)
                     })
                 }
@@ -311,7 +311,7 @@ pub struct TTextSequence {
     _inner: ptr::NonNull<meos_sys::TSequence>,
 }
 impl TTextSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -319,9 +319,9 @@ impl TTextSequence {
     ///
     /// ## Returns
     /// A new temporal object.
-    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: String, time_span: TsTzSpan) -> Self {
+    pub fn from_value_and_tstz_span<Tz: TimeZone>(value: &str, time_span: &TsTzSpan) -> Self {
         Self::from_inner(unsafe {
-            meos_sys::ttextseq_from_base_tstzspan(to_ctext(&value), time_span.inner())
+            meos_sys::ttextseq_from_base_tstzspan(to_ctext(value), time_span.inner())
         })
     }
 }
@@ -361,7 +361,7 @@ pub struct TTextSequenceSet {
 }
 
 impl TTextSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -370,11 +370,11 @@ impl TTextSequenceSet {
     /// ## Returns
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
-        value: String,
-        time_span_set: TsTzSpanSet,
+        value: &str,
+        time_span_set: &TsTzSpanSet,
     ) -> Self {
         Self::from_inner(unsafe {
-            meos_sys::ttextseqset_from_base_tstzspanset(to_ctext(&value), time_span_set.inner())
+            meos_sys::ttextseqset_from_base_tstzspanset(to_ctext(value), time_span_set.inner())
         })
     }
 }
@@ -522,9 +522,9 @@ impl Temporal for TText {
         unsafe {
             let values = meos_sys::ttext_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
-                .into_iter()
-                .map(from_ctext)
+            std::slice::from_raw_parts(values, count as usize)
+                .iter()
+                .map(|v| from_ctext(*v))
                 .collect()
         }
     }
@@ -556,21 +556,21 @@ impl Temporal for TText {
 
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::ttext_at_value(self.inner(), to_ctext(value)) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
         unsafe {
-            let ctexts: Vec<_> = values.iter().map(|text| to_ctext(text)).collect();
-            let set = meos_sys::textset_make(ctexts.as_ptr() as *mut *const _, values.len() as i32);
+            let mut ctexts: Vec<_> = values.iter().map(|text| to_ctext(text)).collect();
+            let set = meos_sys::textset_make(ctexts.as_mut_ptr(), values.len() as i32);
             let result = meos_sys::temporal_at_values(self.inner(), set);
-            if !result.is_null() {
-                Some(factory::<Self::Enum>(result))
-            } else {
+            if result.is_null() {
                 None
+            } else {
+                Some(factory::<Self::Enum>(result))
             }
         }
     }
@@ -583,8 +583,8 @@ impl Temporal for TText {
 
     fn minus_values(&self, values: &[Self::Type]) -> Self::Enum {
         factory::<Self::Enum>(unsafe {
-            let ctexts: Vec<_> = values.iter().map(|text| to_ctext(text)).collect();
-            let set = meos_sys::textset_make(ctexts.as_ptr() as *mut *const _, values.len() as i32);
+            let mut ctexts: Vec<_> = values.iter().map(|text| to_ctext(text)).collect();
+            let set = meos_sys::textset_make(ctexts.as_mut_ptr(), values.len() as i32);
             meos_sys::temporal_minus_values(self.inner(), set)
         })
     }

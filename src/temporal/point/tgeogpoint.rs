@@ -2,12 +2,7 @@ use crate::impl_from_str;
 use crate::temporal::interpolation::TInterpolation;
 use crate::temporal::{tinstant::TInstant, tsequence::TSequence};
 use core::fmt;
-use std::{
-    ffi::{c_void, CString},
-    hash::Hash,
-    mem, ptr,
-    str::FromStr,
-};
+use std::{ffi::CString, hash::Hash, mem, ptr, str::FromStr};
 
 use crate::temporal::tsequence_set::TSequenceSet;
 use crate::{
@@ -16,7 +11,7 @@ use crate::{
     errors::ParseError,
     factory,
     temporal::{
-        tbool::*,
+        tbool::{TBool, TBoolInstant, TBoolSequence, TBoolSequenceSet},
         temporal::{
             impl_always_and_ever_value_equality_functions, impl_simple_traits_for_temporal,
             SimplifiableTemporal, Temporal,
@@ -80,7 +75,7 @@ impl TGeogPointSequence {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_direction
+    /// `tpoint_direction`
     pub fn direction(&self) -> f64 {
         let mut result = 0.;
         let _ = unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
@@ -116,7 +111,7 @@ impl TGeogPointSequenceSet {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_direction
+    /// `tpoint_direction`
     pub fn direction(&self) -> f64 {
         let mut result = 0.;
         let _ = unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
@@ -189,10 +184,10 @@ impl<Tz: TimeZone> FromIterator<(Geometry, DateTime<Tz>)> for TGeogPointSequence
 }
 
 impl Collection for TGeogPoint {
-    impl_collection!(tpoint, Geometry);
+    impl_collection!(tspatial, Geometry);
     fn contains(&self, element: &Self::Type) -> bool {
         unsafe {
-            meos_sys::contains_tpoint_stbox(
+            meos_sys::contains_tspatial_stbox(
                 self.inner(),
                 meos_sys::geo_to_stbox(geometry_to_gserialized(element)),
             )
@@ -211,7 +206,7 @@ impl Temporal for TGeogPoint {
     type Enum = TGeogPoint;
     type TBoolType = TBool;
 
-    impl_always_and_ever_value_equality_functions!(point, geometry_to_gserialized);
+    impl_always_and_ever_value_equality_functions!(geo, geometry_to_gserialized);
     fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
         factory::<Self>(inner)
     }
@@ -225,34 +220,34 @@ impl Temporal for TGeogPoint {
     }
 
     fn bounding_box(&self) -> Self::TBB {
-        STBox::from_inner(unsafe { meos_sys::tpoint_to_stbox(self.inner()) })
+        STBox::from_inner(unsafe { meos_sys::tspatial_to_stbox(self.inner()) })
     }
 
     fn values(&self) -> Vec<Self::Type> {
         let mut count = 0;
         unsafe {
-            let values = meos_sys::tpoint_values(self.inner(), ptr::addr_of_mut!(count));
+            let values = meos_sys::tgeo_values(self.inner(), ptr::addr_of_mut!(count));
 
-            Vec::from_raw_parts(values, count as usize, count as usize)
-                .into_iter()
-                .map(gserialized_to_geometry)
+            std::slice::from_raw_parts(values, count as usize)
+                .iter()
+                .map(|gs: &*mut _| gserialized_to_geometry(*gs))
                 .map(Result::unwrap)
                 .collect()
         }
     }
 
     fn start_value(&self) -> Self::Type {
-        gserialized_to_geometry(unsafe { meos_sys::tpoint_start_value(self.inner()) }).unwrap()
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_start_value(self.inner()) }).unwrap()
     }
 
     fn end_value(&self) -> Self::Type {
-        gserialized_to_geometry(unsafe { meos_sys::tpoint_end_value(self.inner()) }).unwrap()
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_end_value(self.inner()) }).unwrap()
     }
 
     fn value_at_timestamp<Tz: TimeZone>(&self, timestamp: DateTime<Tz>) -> Option<Self::Type> {
         let mut result: mem::MaybeUninit<*mut meos_sys::GSERIALIZED> = mem::MaybeUninit::uninit();
         unsafe {
-            let success = meos_sys::tpoint_value_at_timestamptz(
+            let success = meos_sys::tgeo_value_at_timestamptz(
                 self.inner(),
                 to_meos_timestamp(&timestamp),
                 true,
@@ -269,20 +264,20 @@ impl Temporal for TGeogPoint {
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result =
             unsafe { meos_sys::tpoint_at_value(self.inner(), geometry_to_gserialized(value)) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
         unsafe {
             let set = create_set_of_geometries(values);
             let result = meos_sys::temporal_at_values(self.inner(), set);
-            if !result.is_null() {
-                Some(factory::<Self::Enum>(result))
-            } else {
+            if result.is_null() {
                 None
+            } else {
+                Some(factory::<Self::Enum>(result))
             }
         }
     }
@@ -302,13 +297,13 @@ impl Temporal for TGeogPoint {
 
     fn temporal_equal_value(&self, value: &Self::Type) -> Self::TBoolType {
         Self::TBoolType::from_inner_as_temporal(unsafe {
-            meos_sys::teq_tpoint_point(self.inner(), geometry_to_gserialized(value))
+            meos_sys::teq_tgeo_geo(self.inner(), geometry_to_gserialized(value))
         })
     }
 
     fn temporal_not_equal_value(&self, value: &Self::Type) -> Self::TBoolType {
         Self::TBoolType::from_inner_as_temporal(unsafe {
-            meos_sys::tne_tpoint_point(self.inner(), geometry_to_gserialized(value))
+            meos_sys::tne_tgeo_geo(self.inner(), geometry_to_gserialized(value))
         })
     }
 }

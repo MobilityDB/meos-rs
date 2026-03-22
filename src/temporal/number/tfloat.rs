@@ -12,7 +12,7 @@ use super::tnumber::{impl_meos_enum, impl_temporal_for_tnumber, TNumber};
 use crate::{
     boxes::TBox,
     collections::{
-        base::*,
+        base::{impl_collection, Collection, Span, SpanSet},
         datetime::{TsTzSpan, TsTzSpanSet},
         number::FloatSpanSet,
     },
@@ -41,7 +41,7 @@ macro_rules! impl_debug {
                 let c_str = unsafe { CStr::from_ptr(out_str) };
                 let string = c_str.to_str().map_err(|_| std::fmt::Error)?;
                 let result = f.write_str(string);
-                unsafe { libc::free(out_str as *mut c_void) };
+                unsafe { libc::free(out_str.cast::<c_void>()) };
                 result
             }
         }
@@ -141,7 +141,7 @@ pub struct TFloatSequence {
 }
 
 impl TFloatSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -151,7 +151,7 @@ impl TFloatSequence {
     /// A new temporal object.
     pub fn from_value_and_tstz_span<Tz: TimeZone>(
         value: f64,
-        time_span: TsTzSpan,
+        time_span: &TsTzSpan,
         interpolation: TInterpolation,
     ) -> Self {
         Self::from_inner(unsafe {
@@ -197,7 +197,7 @@ pub struct TFloatSequenceSet {
 }
 
 impl TFloatSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -207,7 +207,7 @@ impl TFloatSequenceSet {
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
         value: f64,
-        time_span_set: TsTzSpanSet,
+        time_span_set: &TsTzSpanSet,
         interpolation: TInterpolation,
     ) -> Self {
         Self::from_inner(unsafe {
