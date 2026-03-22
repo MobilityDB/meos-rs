@@ -29,12 +29,9 @@ fn main() {
         println!("cargo:rustc-link-lib=static=gsl");
         println!("cargo:rustc-link-lib=static=gslcblas");
 
-        // Copy spatial_ref_sys.csv to the expected location if not already present
-        let csv_src = std::path::Path::new(&meos_path).join("share/spatial_ref_sys.csv");
-        let csv_dst = std::path::Path::new("/usr/local/share/spatial_ref_sys.csv");
-        if csv_src.exists() && !csv_dst.exists() {
-            std::fs::copy(&csv_src, csv_dst).expect("Failed to copy spatial_ref_sys.csv");
-        }
+        // Expose the path to spatial_ref_sys.csv for use in meos_initialize
+        let csv_path = std::path::Path::new(&meos_path).join("share/spatial_ref_sys.csv");
+        println!("cargo:SPATIAL_REF_SYS_CSV={}", csv_path.display());
 
         format!("{meos_path}/include")
     } else {

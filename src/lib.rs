@@ -75,6 +75,11 @@ unsafe extern "C" fn error_handler(_error_level: i32, _error_code: i32, message:
 /// ```
 pub fn meos_initialize() {
     START.call_once(|| unsafe {
+        #[cfg(feature = "bundled")]
+        {
+            let path = CString::new(env!("MEOS_SPATIAL_REF_SYS_CSV")).unwrap();
+            meos_sys::meos_set_spatial_ref_sys_csv(path.as_ptr());
+        }
         meos_sys::meos_initialize();
         meos_sys::meos_initialize_error_handler(Some(error_handler));
     });
