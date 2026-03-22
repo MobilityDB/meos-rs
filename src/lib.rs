@@ -172,7 +172,7 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     /// ## Returns
     /// A merged temporal object.
     fn from_merge(temporals: &[Self]) -> Self {
-        let mut t_list: Vec<_> = temporals.iter().map(Self::inner).collect();
+        let mut t_list: Vec<*mut meos_sys::Temporal> = temporals.iter().map(|t| Self::inner(t).cast_mut()).collect();
         factory::<Self>(unsafe {
             meos_sys::temporal_merge_array(t_list.as_mut_ptr(), temporals.len() as i32)
         })

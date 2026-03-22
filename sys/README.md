@@ -44,15 +44,32 @@ pkg-config support), set `MEOS_LIB_DIR` to point to the library directory:
 ```bash
 # Linux
 LD_LIBRARY_PATH=<path>/lib MEOS_LIB_DIR=<path>/lib cargo build
-
-# macOS
-DYLD_FALLBACK_LIBRARY_PATH=<path>/lib MEOS_LIB_DIR=<path>/lib cargo build
 ```
 
 ### Bundled (`bundled`)
 
 Builds MEOS 1.3 and all its dependencies (GEOS, PROJ, JSON-C, GSL) from the
 bundled source as static libraries. No system MEOS installation required.
+
+The following system packages are required to compile:
+
+- `cmake` — build system used to compile MEOS and its dependencies (GEOS, PROJ, JSON-C, GSL)
+- `clang` / `libclang-dev` — required by `bindgen` to parse the MEOS C headers and generate Rust bindings
+- `pkg-config` — used to locate system libraries during the build
+- `sqlite3` / `libsqlite3-dev` — required by PROJ, which uses SQLite to store its coordinate reference system database
+
+```bash
+# Debian/Ubuntu
+apt-get install cmake clang libclang-dev pkg-config sqlite3 libsqlite3-dev
+```
+
+Additionally, the git submodules (JSON-C, GSL) must be initialized before building, as they are bundled as git submodules rather than downloaded at build time:
+
+```bash
+git submodule update --init --recursive
+```
+
+
 
 > **Note:** If you have a system `libmeos.so` installed (e.g. at
 > `/usr/local/lib/libmeos.so`), remove or unload it before using `bundled` to

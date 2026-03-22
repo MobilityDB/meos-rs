@@ -6,7 +6,7 @@ use crate::{
     temporal::{number::tfloat::TFloat, temporal::Temporal},
 };
 use core::fmt;
-use geos::{Geom, Geometry, OutputDimension, WKBWriter};
+use geos::{CoordDimensions, Geom, Geometry, WKBWriter};
 use meos_sys::GSERIALIZED;
 use std::{
     ffi::{c_void, CStr, CString},
@@ -28,7 +28,7 @@ fn point_to_gserialize(point: Point, geodetic: bool) -> *mut meos_sys::GSERIALIZ
 
 pub(super) fn geometry_to_gserialized(geometry: &Geometry) -> *mut GSERIALIZED {
     let mut writer = WKBWriter::new().expect("Failed to create WKBWriter");
-    writer.set_output_dimension(OutputDimension::ThreeD);
+    writer.set_output_dimension(CoordDimensions::ThreeD);
     let wkb: Vec<u8> = writer.write_wkb(geometry).unwrap().into();
     let wkb_len = wkb.len();
 
@@ -52,8 +52,8 @@ pub(super) fn gserialized_to_geometry(
 }
 
 pub(super) fn create_set_of_geometries(values: &[Geometry]) -> *mut meos_sys::Set {
-    let cgeos: Vec<_> = values.iter().map(geometry_to_gserialized).collect();
-    unsafe { meos_sys::geoset_make(cgeos.as_ptr() as *mut *const _, values.len() as i32) }
+    let mut cgeos: Vec<_> = values.iter().map(geometry_to_gserialized).collect();
+    unsafe { meos_sys::geoset_make(cgeos.as_mut_ptr(), values.len() as i32) }
 }
 
 impl fmt::Display for Point {
@@ -528,12 +528,12 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
                 let bytes_len = bytes.len();
                 let result = unsafe {
                     meos_sys::geo_from_ewkb(
-                        bytes.into_inner(),
+                        bytes.as_ptr(),
                         bytes_len,
                         g.get_srid().expect("No SRID") as i32,
                     )
                 };
-                result as *const _
+                result
             })
             .collect();
         let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
@@ -591,12 +591,12 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
                 let bytes_len = bytes.len();
                 let result = unsafe {
                     meos_sys::geo_from_ewkb(
-                        bytes.into_inner(),
+                        bytes.as_ptr(),
                         bytes_len,
                         g.get_srid().expect("No SRID") as i32,
                     )
                 };
-                result.cast_const()
+                result
             })
             .collect();
         let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
@@ -1220,8 +1220,8 @@ macro_rules! impl_tpoint_traits {
                 }
                 fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
                     unsafe {
-                        let cgeos: Vec<_> = values.into_iter().map(|geo| geometry_to_gserialized(&geo)).collect();
-                        let set = meos_sys::geoset_make(cgeos.as_ptr() as *mut *const _, values.len() as i32);
+                        let mut cgeos: Vec<_> = values.into_iter().map(|geo| geometry_to_gserialized(&geo)).collect();
+                        let set = meos_sys::geoset_make(cgeos.as_mut_ptr(), values.len() as i32);
                         let result = meos_sys::temporal_at_values(self.inner(), set);
                         if !result.is_null() {
                             Some(factory::<Self::Enum>(result))
@@ -1239,8 +1239,8 @@ macro_rules! impl_tpoint_traits {
 
                 fn minus_values(&self, values: &[Self::Type]) -> Self::Enum {
                     factory::<Self::Enum>(unsafe {
-                        let cgeos: Vec<_> = values.into_iter().map(|geo| geometry_to_gserialized(&geo)).collect();
-                        let set = meos_sys::geoset_make(cgeos.as_ptr() as *mut *const _, values.len() as i32);
+                        let mut cgeos: Vec<_> = values.into_iter().map(|geo| geometry_to_gserialized(&geo)).collect();
+                        let set = meos_sys::geoset_make(cgeos.as_mut_ptr(), values.len() as i32);
                         meos_sys::temporal_minus_values(self.inner(), set)
                     })
                 }

@@ -23,7 +23,7 @@ pub trait TSequence: Temporal {
         ) || values.len() == 1;
         TSequence::from_inner(unsafe {
             meos_sys::tsequence_make(
-                t_list.as_mut_ptr(),
+                t_list.as_mut_ptr() as *mut *mut _,
                 t_list.len() as i32,
                 true,
                 upper_inclusive,
