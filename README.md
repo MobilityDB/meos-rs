@@ -25,7 +25,7 @@ Add the following dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-meos = "0.2"
+meos = "0.3"
 ```
 
 This requires MEOS 1.3 to be installed on your system. Follow the [installation instructions](https://github.com/MobilityDB/MobilityDB/?tab=readme-ov-file#requirements) on the MEOS website.
@@ -33,7 +33,7 @@ This requires MEOS 1.3 to be installed on your system. Follow the [installation 
 Alternatively, enable the `bundled` feature to build MEOS and its dependencies from source:
 
 ```toml
-meos = { version = "0.2", features = ["bundled"] }
+meos = { version = "0.3", features = ["bundled"] }
 ```
 
 This requires the following build tools:

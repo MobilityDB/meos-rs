@@ -1,6 +1,6 @@
 [package]
 name = "meos-sys"
-version = "0.1.9"
+version = "0.2.0"
 authors = ["David García Morillo <david.garcia.morillo@ulb.be>"]
 
 repository = "https://github.com/MobilityDB/meos-rs"
@@ -14,7 +14,7 @@ edition = "2021"
 links = "meos"
 
 [dependencies]
-meos-src = { path = "./meos-src", version = "0.1.0", optional = true }
+meos-src = { path = "./meos-src", version = "0.2.0", optional = true }
 geos-sys = { version = "2.0", optional = true }
 proj-sys = { version = "0.27", optional = true }
 
