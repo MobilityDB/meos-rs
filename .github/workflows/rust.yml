@@ -43,6 +43,11 @@ jobs:
     - name: Run tests
       run: cargo test --verbose --no-default-features --features geos
 
+    - name: Download example data
+      run: |
+        mkdir -p data
+        curl -o data/ais_instants.csv https://raw.githubusercontent.com/MobilityDB/MobilityDB/master/meos/examples/data/ais_instants.csv
+
     - name: Run examples
       run: |
         cargo run --example 01_hello_world --no-default-features --features geos
@@ -69,6 +74,11 @@ jobs:
 
     - name: Run tests
       run: cargo test --verbose --features bundled
+
+    - name: Download example data
+      run: |
+        mkdir -p data
+        curl -o data/ais_instants.csv https://raw.githubusercontent.com/MobilityDB/MobilityDB/master/meos/examples/data/ais_instants.csv
 
     - name: Run examples
       run: |
