@@ -278,7 +278,7 @@ pub struct TBoolSequence {
     _inner: ptr::NonNull<meos_sys::TSequence>,
 }
 impl TBoolSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -326,7 +326,7 @@ pub struct TBoolSequenceSet {
 }
 
 impl TBoolSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -336,7 +336,7 @@ impl TBoolSequenceSet {
     /// A new temporal object.
     pub fn from_value_and_tstz_span_set<Tz: TimeZone>(
         value: bool,
-        time_span_set: TsTzSpanSet,
+        time_span_set: &TsTzSpanSet,
     ) -> Self {
         Self::from_inner(unsafe {
             meos_sys::tboolseqset_from_base_tstzspanset(value, time_span_set.inner())
@@ -477,10 +477,10 @@ impl Temporal for TBool {
 
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::tbool_at_value(self.inner(), *value) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     /// Not implemented for `tbool` types

@@ -5,6 +5,9 @@
 #![allow(refining_impl_trait)]
 #![allow(clippy::non_canonical_partial_ord_impl)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::doc_lazy_continuation)]
 #![allow(clippy::return_self_not_must_use)]
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::cast_possible_wrap)]
@@ -79,7 +82,8 @@ pub fn meos_initialize() {
 
 pub fn meos_initialize_timezone(tz: &str) {
     unsafe {
-        let ptr = CString::new(tz).unwrap();
+        #[allow(clippy::missing_panics_doc)]
+        let ptr = CString::new(tz).expect("Wrong timezone format");
 
         meos_sys::meos_initialize_timezone(ptr.as_ptr());
     }
@@ -172,7 +176,10 @@ pub trait MeosEnum: Debug + Sized + Temporal {
     /// ## Returns
     /// A merged temporal object.
     fn from_merge(temporals: &[Self]) -> Self {
-        let mut t_list: Vec<*mut meos_sys::Temporal> = temporals.iter().map(|t| Self::inner(t).cast_mut()).collect();
+        let mut t_list: Vec<*mut meos_sys::Temporal> = temporals
+            .iter()
+            .map(|t| Self::inner(t).cast_mut())
+            .collect();
         factory::<Self>(unsafe {
             meos_sys::temporal_merge_array(t_list.as_mut_ptr(), temporals.len() as i32)
         })

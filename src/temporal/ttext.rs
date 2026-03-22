@@ -311,7 +311,7 @@ pub struct TTextSequence {
     _inner: ptr::NonNull<meos_sys::TSequence>,
 }
 impl TTextSequence {
-    /// Creates a temporal object from a value and a TsTz span.
+    /// Creates a temporal object from a value and a `TsTz` span.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -361,7 +361,7 @@ pub struct TTextSequenceSet {
 }
 
 impl TTextSequenceSet {
-    /// Creates a temporal object from a base value and a TsTz span set.
+    /// Creates a temporal object from a base value and a `TsTz` span set.
     ///
     /// ## Arguments
     /// * `value` - Base value.
@@ -556,10 +556,10 @@ impl Temporal for TText {
 
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::ttext_at_value(self.inner(), to_ctext(value)) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
@@ -567,10 +567,10 @@ impl Temporal for TText {
             let mut ctexts: Vec<_> = values.iter().map(|text| to_ctext(text)).collect();
             let set = meos_sys::textset_make(ctexts.as_mut_ptr(), values.len() as i32);
             let result = meos_sys::temporal_at_values(self.inner(), set);
-            if !result.is_null() {
-                Some(factory::<Self::Enum>(result))
-            } else {
+            if result.is_null() {
                 None
+            } else {
+                Some(factory::<Self::Enum>(result))
             }
         }
     }

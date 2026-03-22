@@ -3,7 +3,6 @@ pub mod tgeompoint;
 pub mod tpoint;
 
 #[cfg(test)]
-#[serial_test::serial]
 mod tests {
     use crate::{meos_initialize, meos_initialize_timezone};
 

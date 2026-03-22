@@ -30,6 +30,6 @@ impl FromStr for TInterpolation {
 // Implementing `fmt::Display` for easy printing.
 impl fmt::Display for TInterpolation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }

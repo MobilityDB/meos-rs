@@ -43,10 +43,10 @@ pub trait Temporal: Collection + Hash {
         string.to_str().unwrap().parse().unwrap()
     }
 
-    /// Returns the set of unique values in the temporal object.
-    ///
-    /// ## Returns
-    /// A set of unique values.
+    // /// Returns the set of unique values in the temporal object.
+    // ///
+    // /// ## Returns
+    // /// A set of unique values.
     // fn value_set(&self) -> HashSet<Self::Type>;
 
     /// Returns the list of values taken by the temporal object.
@@ -1173,10 +1173,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "always_lt_temporal_temporal")]
     fn always_less(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::always_lt_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1192,10 +1192,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "always_le_temporal_temporal")]
     fn always_less_or_equal(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::always_le_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1211,10 +1211,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "always_ge_temporal_temporal")]
     fn always_greater_or_equal(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::always_ge_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1230,10 +1230,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "always_gt_temporal_temporal")]
     fn always_greater(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::always_gt_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
     /// Returns whether the values of `self` are ever less than `other`.
@@ -1248,10 +1248,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "ever_lt_temporal_temporal")]
     fn ever_less(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::ever_lt_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
     /// Returns whether the values of `self` are ever less than or equal to `other`.
@@ -1266,10 +1266,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "ever_le_temporal_temporal")]
     fn ever_less_or_equal(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::ever_le_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1285,10 +1285,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "ever_ge_temporal_temporal")]
     fn ever_greater_or_equal(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::ever_ge_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 
@@ -1304,10 +1304,10 @@ pub trait OrderedTemporal: Temporal {
     #[doc(alias = "ever_gt_temporal_temporal")]
     fn ever_greater(&self, other: &Self::Enum) -> Option<bool> {
         let result = unsafe { meos_sys::ever_gt_temporal_temporal(self.inner(), other.inner()) };
-        if result != -1 {
-            Some(result == 1)
-        } else {
+        if result == -1 {
             None
+        } else {
+            Some(result == 1)
         }
     }
 

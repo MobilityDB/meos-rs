@@ -13,15 +13,16 @@ use std::{
     ptr, slice,
 };
 
+#[derive(Clone, Copy)]
 pub struct Point(f64, f64, Option<f64>);
 
 fn point_to_gserialize(point: Point, geodetic: bool) -> *mut meos_sys::GSERIALIZED {
     let cstring = CString::new(point.to_string()).unwrap();
     unsafe {
         if geodetic {
-            meos_sys::geom_in(cstring.as_ptr() as *mut _, -1)
+            meos_sys::geom_in(cstring.as_ptr().cast_mut(), -1)
         } else {
-            meos_sys::geog_in(cstring.as_ptr() as *mut _, -1)
+            meos_sys::geog_in(cstring.as_ptr().cast_mut(), -1)
         }
     }
 }
@@ -29,14 +30,14 @@ fn point_to_gserialize(point: Point, geodetic: bool) -> *mut meos_sys::GSERIALIZ
 pub(super) fn geometry_to_gserialized(geometry: &Geometry) -> *mut GSERIALIZED {
     let mut writer = WKBWriter::new().expect("Failed to create WKBWriter");
     writer.set_output_dimension(CoordDimensions::ThreeD);
-    let wkb: Vec<u8> = writer.write_wkb(geometry).unwrap().into();
+    let wkb: Vec<u8> = writer.write_wkb(geometry).unwrap();
     let wkb_len = wkb.len();
 
     unsafe {
         meos_sys::geo_from_ewkb(
             wkb.as_ptr(),
             wkb_len,
-            geometry.get_srid().unwrap_or_default() as i32,
+            geometry.get_srid().unwrap_or_default(),
         )
     }
 }
@@ -79,12 +80,12 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_out
+    /// `tpoint_out`
     fn as_wkt(&self, precision: i32) -> String {
         let out_str = unsafe { meos_sys::tspatial_as_text(self.inner(), precision) };
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().unwrap().to_owned();
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         str
     }
 
@@ -100,16 +101,16 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_as_ewkt
+    /// `tpoint_as_ewkt`
     fn as_ewkt(&self, precision: i32) -> String {
         let out_str = unsafe { meos_sys::tspatial_as_ewkt(self.inner(), precision) };
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().unwrap().to_owned();
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         str
     }
 
-    /// Returns the trajectory of the temporal point as a GeoJSON string.
+    /// Returns the trajectory of the temporal point as a `GeoJSON` string.
     ///
     /// ## Arguments
     ///
@@ -123,7 +124,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// gserialized_as_geojson
+    /// `gserialized_as_geojson`
     fn as_geojson(&self, variant: JSONCVariant, srs: &str) -> Option<String> {
         let cstring = CString::new(srs).unwrap();
         let trajectory = unsafe { meos_sys::tpoint_trajectory(self.inner(), false) };
@@ -132,7 +133,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error).ok()?;
         let result = str.to_owned();
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         Some(result)
     }
 
@@ -144,7 +145,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_length
+    /// `tpoint_length`
     fn length(&self) -> f64 {
         unsafe { meos_sys::tpoint_length(self.inner()) }
     }
@@ -157,7 +158,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_cumulative_length
+    /// `tpoint_cumulative_length`
     fn cumulative_length(&self) -> TFloat {
         factory::<TFloat>(unsafe { meos_sys::tpoint_cumulative_length(self.inner()) })
     }
@@ -170,7 +171,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_speed
+    /// `tpoint_speed`
     fn speed(&self) -> TFloat {
         factory::<TFloat>(unsafe { meos_sys::tpoint_speed(self.inner()) })
     }
@@ -183,7 +184,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_get_x
+    /// `tpoint_get_x`
     fn x(&self) -> TFloat {
         factory::<TFloat>(unsafe { meos_sys::tpoint_get_x(self.inner()) })
     }
@@ -196,7 +197,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_get_y
+    /// `tpoint_get_y`
     fn y(&self) -> TFloat {
         factory::<TFloat>(unsafe { meos_sys::tpoint_get_y(self.inner()) })
     }
@@ -209,7 +210,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_get_z
+    /// `tpoint_get_z`
     fn z(&self) -> Option<TFloat> {
         if self.has_z() {
             Some(factory::<TFloat>(unsafe {
@@ -228,13 +229,13 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_start_value
+    /// `tpoint_start_value`
     fn has_z(&self) -> bool {
         let ptr = unsafe { meos_sys::tpoint_get_z(self.inner()) };
         !ptr.is_null()
     }
 
-    /// Returns a STBox representing the bounding box of the temporal point.
+    /// Returns a `STBox` representing the bounding box of the temporal point.
     ///
     /// ## Returns
     ///
@@ -242,7 +243,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tspatial_to_stbox
+    /// `tspatial_to_stbox`
     fn stbox(&self) -> STBox {
         STBox::from_inner(unsafe { meos_sys::tspatial_to_stbox(self.inner()) })
     }
@@ -255,7 +256,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_stboxes
+    /// `tpoint_stboxes`
     fn stboxes(&self) -> Vec<STBox> {
         let mut count = 0;
         let result = unsafe { meos_sys::tgeo_stboxes(self.inner(), ptr::addr_of_mut!(count)) };
@@ -280,7 +281,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_is_simple
+    /// `tpoint_is_simple`
     fn is_simple(&self) -> bool {
         unsafe { meos_sys::tpoint_is_simple(self.inner()) }
     }
@@ -297,7 +298,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// bearing_tpoint_point, bearing_tpoint_tpoint
+    /// `bearing_tpoint_point`, `bearing_tpoint_tpoint`
     fn bearing(&self, other: &Self::Enum) -> TFloat {
         factory::<TFloat>(unsafe { meos_sys::bearing_tpoint_tpoint(self.inner(), other.inner()) })
     }
@@ -314,7 +315,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// bearing_tpoint_point, bearing_tpoint_tpoint
+    /// `bearing_tpoint_point`, `bearing_tpoint_tpoint`
     fn bearing_geometry(&self, geometry: &Geometry) -> TFloat {
         let geo = geometry_to_gserialized(geometry);
         factory::<TFloat>(unsafe { meos_sys::bearing_tpoint_point(self.inner(), geo, false) })
@@ -328,13 +329,13 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_azimuth
+    /// `tpoint_azimuth`
     fn azimuth(&self) -> Option<TFloat> {
         let result = unsafe { meos_sys::tpoint_azimuth(self.inner()) };
-        if !result.is_null() {
-            Some(factory::<TFloat>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<TFloat>(result))
         }
     }
 
@@ -346,13 +347,13 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_angular_difference
+    /// `tpoint_angular_difference`
     fn angular_difference(&self) -> Option<TFloat> {
         let result = unsafe { meos_sys::tpoint_angular_difference(self.inner()) };
-        if !result.is_null() {
-            Some(factory::<TFloat>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<TFloat>(result))
         }
     }
 
@@ -368,7 +369,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_twcentroid
+    /// `tpoint_twcentroid`
     fn time_weighted_centroid(&self) -> Result<Geometry, geos::Error> {
         let gs = unsafe { meos_sys::tpoint_twcentroid(self.inner()) };
         gserialized_to_geometry(gs)
@@ -379,8 +380,8 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     /// ## Arguments
     ///
     /// * `unary_union` - True when the `ST_UnaryUnion` function is applied to
-    /// the result to remove redundant geometry components. Note that applying the
-    /// `ST_UnaryUnion` function is EXTREMELY slow as reported by Issue MobilityDB#679.
+    ///   the result to remove redundant geometry components. Note that applying the
+    ///   `ST_UnaryUnion` function is EXTREMELY slow as reported by Issue MobilityDB#679.
     ///
     /// ## Returns
     ///
@@ -388,7 +389,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///
     /// ## MEOS Functions
     ///
-    /// gserialized_to_geos_geometry
+    /// `gserialized_to_geos_geometry`
     fn trajectory(&self, unary_union: bool) -> Result<Geometry, geos::Error> {
         let gs = unsafe { meos_sys::tpoint_trajectory(self.inner(), unary_union) };
 
@@ -400,15 +401,15 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     /// Returns the SRID.
     ///
     /// MEOS Functions:
-    ///     tpoint_srid
+    ///     `tpoint_srid`
     fn srid(&self) -> i32 {
         unsafe { meos_sys::tspatial_srid(self.inner()) }
     }
 
-    /// Returns a new TPoint with the given SRID.
+    /// Returns a new `TPoint` with the given SRID.
     ///
     /// MEOS Functions:
-    ///     tpoint_set_srid
+    ///     `tpoint_set_srid`
     fn with_srid(&self, srid: i32) -> Self {
         Self::from_inner_as_temporal(unsafe { meos_sys::tspatial_set_srid(self.inner(), srid) })
     }
@@ -420,7 +421,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TGeomPoint` object.
     ///
     /// MEOS Functions:
-    ///     tpoint_round
+    ///     `tpoint_round`
     fn round(&self, max_decimals: i32) -> Self {
         Self::from_inner_as_temporal(unsafe {
             meos_sys::temporal_round(self.inner(), max_decimals)
@@ -433,7 +434,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A `Vec<Self::Enum>`.
     ///
     /// MEOS Functions:
-    ///     tpoint_make_simple
+    ///     `tpoint_make_simple`
     fn make_simple(&self) -> Vec<Self::Enum> {
         let mut count = 0;
         let result =
@@ -457,7 +458,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `STBox` instance.
     ///
     /// MEOS Functions:
-    ///     tpoint_expand_space
+    ///     `tpoint_expand_space`
     fn expand(&self, distance: f64) -> STBox {
         STBox::from_inner(unsafe { meos_sys::stbox_expand_space(self.stbox().inner(), distance) })
     }
@@ -471,7 +472,7 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///      A new `TPoint` instance.
     ///
     /// MEOS Functions:
-    ///     tpoint_transform
+    ///     `tpoint_transform`
     fn transform(&self, srid: i32) -> Self {
         Self::from_inner_as_temporal(unsafe { meos_sys::tspatial_transform(self.inner(), srid) })
     }
@@ -486,8 +487,8 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_at_value, tpoint_at_stbox, temporal_at_values,
-    ///     temporal_at_timestamp, temporal_at_tstzset, temporal_at_tstzspan, temporal_at_tstzspanset
+    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
+    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
     fn at_point(&self, point: Point) -> Self::Enum {
         let geo = point_to_gserialize(point, IS_GEODETIC);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_at_value(self.inner(), geo) })
@@ -502,8 +503,8 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_at_value, tpoint_at_stbox, temporal_at_values,
-    ///     temporal_at_timestamp, temporal_at_tstzset, temporal_at_tstzspan, temporal_at_tstzspanset
+    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
+    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
     fn at_geometry(&self, geometry: &Geometry) -> Self::Enum {
         let geo = geometry_to_gserialized(geometry);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_at_value(self.inner(), geo) })
@@ -518,22 +519,22 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_at_value, tpoint_at_stbox, temporal_at_values,
-    ///     temporal_at_timestamp, temporal_at_tstzset, temporal_at_tstzspan, temporal_at_tstzspanset
+    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
+    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
     fn at_geometries(&self, geometries: &[Geometry]) -> Self::Enum {
         let mut pointers: Vec<_> = geometries
             .iter()
             .map(|g| {
                 let bytes = g.to_wkb().unwrap();
                 let bytes_len = bytes.len();
-                let result = unsafe {
+
+                unsafe {
                     meos_sys::geo_from_ewkb(
                         bytes.as_ptr(),
                         bytes_len,
-                        g.get_srid().expect("No SRID") as i32,
+                        g.get_srid().expect("No SRID"),
                     )
-                };
-                result
+                }
             })
             .collect();
         let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
@@ -549,8 +550,8 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_minus_value, tpoint_minus_stbox, temporal_minus_values,
-    ///     temporal_minus_timestamp, temporal_minus_tstzset, temporal_minus_tstzspan, temporal_minus_tstzspanset
+    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
+    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
     fn minus_point(&self, point: Point) -> Self::Enum {
         let geo = point_to_gserialize(point, IS_GEODETIC);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_minus_value(self.inner(), geo) })
@@ -565,8 +566,8 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_minus_value, tpoint_minus_stbox, temporal_minus_values,
-    ///     temporal_minus_timestamp, temporal_minus_tstzset, temporal_minus_tstzspan, temporal_minus_tstzspanset
+    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
+    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
     fn minus_geometry(&self, geometry: &Geometry) -> Self::Enum {
         let geo = geometry_to_gserialized(geometry);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_minus_value(self.inner(), geo) })
@@ -581,22 +582,22 @@ pub trait TPointTrait<const IS_GEODETIC: bool>: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
     ///
     /// MEOS Functions:
-    ///     tpoint_minus_value, tpoint_minus_stbox, temporal_minus_values,
-    ///     temporal_minus_timestamp, temporal_minus_tstzset, temporal_minus_tstzspan, temporal_minus_tstzspanset
+    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
+    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
     fn minus_geometries(&self, geometries: &[Geometry]) -> Self::Enum {
         let mut pointers: Vec<_> = geometries
             .iter()
             .map(|g| {
                 let bytes = g.to_wkb().unwrap();
                 let bytes_len = bytes.len();
-                let result = unsafe {
+
+                unsafe {
                     meos_sys::geo_from_ewkb(
                         bytes.as_ptr(),
                         bytes_len,
-                        g.get_srid().expect("No SRID") as i32,
+                        g.get_srid().expect("No SRID"),
                     )
-                };
-                result
+                }
             })
             .collect();
         let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
@@ -1157,7 +1158,8 @@ macro_rules! impl_tpoint_traits {
                 impl_always_and_ever_value_equality_functions!(geo, geometry_to_gserialized);
                 fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
                     Self {
-                        _inner: ptr::NonNull::new(inner as *mut meos_sys::[<T $temporal_type>]).expect("Null pointers not allowed"),
+                        #[allow(clippy::cast_ptr_alignment)]
+                        _inner: ptr::NonNull::new(inner.cast::<meos_sys::[<T $temporal_type>]>()).expect("Null pointers not allowed"),
                     }
                 }
 

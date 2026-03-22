@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{BitAnd, BitOr};
 
-use crate::collections::base::*;
+use crate::collections::base::{Collection, Span, SpanSet, impl_collection, impl_iterator};
 use crate::errors::ParseError;
 use crate::utils::to_meos_timestamp;
 
@@ -23,7 +23,7 @@ pub struct TsTzSpanSet {
 impl Drop for TsTzSpanSet {
     fn drop(&mut self) {
         unsafe {
-            libc::free(self._inner.as_ptr() as *mut c_void);
+            libc::free(self._inner.as_ptr().cast::<c_void>());
         }
     }
 }
@@ -133,7 +133,7 @@ impl SpanSet for TsTzSpanSet {
     fn shift_scale(&self, delta: Option<TimeDelta>, width: Option<TimeDelta>) -> TsTzSpanSet {
         let d = {
             if let Some(d) = delta {
-                &*Box::new(create_interval(d)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(d))
             } else {
                 std::ptr::null()
             }
@@ -141,7 +141,7 @@ impl SpanSet for TsTzSpanSet {
 
         let w = {
             if let Some(w) = width {
-                &*Box::new(create_interval(w)) as *const meos_sys::Interval
+                &raw const *Box::new(create_interval(w))
             } else {
                 std::ptr::null()
             }
@@ -282,7 +282,7 @@ impl Debug for TsTzSpanSet {
         let c_str = unsafe { CStr::from_ptr(out_str) };
         let str = c_str.to_str().map_err(|_| std::fmt::Error)?;
         let result = f.write_str(str);
-        unsafe { libc::free(out_str as *mut c_void) };
+        unsafe { libc::free(out_str.cast::<c_void>()) };
         result
     }
 }

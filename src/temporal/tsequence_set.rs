@@ -10,7 +10,7 @@ pub trait TSequenceSet: Temporal {
     fn new(values: &[Self::TS], normalize: bool) -> Self {
         let mut t_list: Vec<_> = values.iter().map(TSequence::inner_as_tsequence).collect();
         TSequenceSet::from_inner(unsafe {
-            meos_sys::tsequenceset_make(t_list.as_mut_ptr() as *mut *mut _, t_list.len() as i32, normalize)
+            meos_sys::tsequenceset_make(t_list.as_mut_ptr().cast::<*mut _>(), t_list.len() as i32, normalize)
         })
     }
 

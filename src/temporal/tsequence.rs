@@ -14,7 +14,7 @@ pub trait TSequence: Temporal {
     fn new<Inst: AsRef<Self::TI>>(values: &[Inst], interpolation: TInterpolation) -> Self {
         let mut t_list: Vec<_> = values
             .iter()
-            .map(|i| i.as_ref().inner_as_tinstant())
+            .map(|i| i.as_ref().inner_as_tinstant().cast_mut())
             .collect();
         // The default for discrete instances or instantaneous sequences is an inclusive upper bound
         let upper_inclusive = matches!(
@@ -23,7 +23,7 @@ pub trait TSequence: Temporal {
         ) || values.len() == 1;
         TSequence::from_inner(unsafe {
             meos_sys::tsequence_make(
-                t_list.as_mut_ptr() as *mut *mut _,
+                t_list.as_mut_ptr(),
                 t_list.len() as i32,
                 true,
                 upper_inclusive,

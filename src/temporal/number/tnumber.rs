@@ -139,7 +139,7 @@ pub trait TNumber: Temporal<TBB = TBox> {
 ///
 /// ## Parameters:
 ///    - `type`: The actual Rust type to implement the traits to
-///    - `temporal_type`: Whether it's Instant, Sequence, or SequenceSet
+///    - `temporal_type`: Whether it's Instant, Sequence, or `SequenceSet`
 ///    - `base_type`: The base Rust type, i32 or f64.
 ///    - `basic_type`: Whether it's Int or Float.
 macro_rules! impl_temporal_for_tnumber {
@@ -183,7 +183,8 @@ macro_rules! impl_temporal_for_tnumber {
 
                 fn from_inner_as_temporal(inner: *mut meos_sys::Temporal) -> Self {
                     Self {
-                        _inner: ptr::NonNull::new(inner as *mut meos_sys::[<T $temporal_type>]).expect("Null pointers not allowed"),
+                        #[allow(clippy::cast_ptr_alignment)]
+                        _inner: ptr::NonNull::new(inner.cast::<meos_sys::[<T $temporal_type>]>()).expect("Null pointers not allowed"),
                     }
                 }
 

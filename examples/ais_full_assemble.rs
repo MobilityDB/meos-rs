@@ -168,7 +168,7 @@ fn main() {
     let output_file = File::create("data/ais_trips_new.csv").unwrap();
     let mut writer = csv::Writer::from_writer(output_file);
 
-    writer.write_record(&["mmsi", "trip", "sog"]).unwrap();
+    writer.write_record(["mmsi", "trip", "sog"]).unwrap();
 
     for trip in &trips {
         let trip_str = trip.trip.as_ref().unwrap().as_wkt(5); // Adjust as per actual method in `pymeos`

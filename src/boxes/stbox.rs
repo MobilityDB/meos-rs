@@ -252,7 +252,7 @@ impl STBox {
     /// Panics if the geometry cannot be converted to WKB.
     #[cfg(feature = "geos")]
     pub fn from_geos(value: &Geometry) -> Self {
-        let v: Vec<u8> = value.to_wkb().unwrap().into();
+        let v: Vec<u8> = value.to_wkb().unwrap();
         Self::from_wkb(&v)
     }
 

@@ -11,7 +11,7 @@ use crate::{
     errors::ParseError,
     factory,
     temporal::{
-        tbool::*,
+        tbool::{TBool, TBoolInstant, TBoolSequence, TBoolSequenceSet},
         temporal::{
             impl_always_and_ever_value_equality_functions, impl_simple_traits_for_temporal,
             SimplifiableTemporal, Temporal,
@@ -75,7 +75,7 @@ impl TGeogPointSequence {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_direction
+    /// `tpoint_direction`
     pub fn direction(&self) -> f64 {
         let mut result = 0.;
         let _ = unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
@@ -111,7 +111,7 @@ impl TGeogPointSequenceSet {
     ///
     /// ## MEOS Functions
     ///
-    /// tpoint_direction
+    /// `tpoint_direction`
     pub fn direction(&self) -> f64 {
         let mut result = 0.;
         let _ = unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
@@ -264,20 +264,20 @@ impl Temporal for TGeogPoint {
     fn at_value(&self, value: &Self::Type) -> Option<Self::Enum> {
         let result =
             unsafe { meos_sys::tpoint_at_value(self.inner(), geometry_to_gserialized(value)) };
-        if !result.is_null() {
-            Some(factory::<Self::Enum>(result))
-        } else {
+        if result.is_null() {
             None
+        } else {
+            Some(factory::<Self::Enum>(result))
         }
     }
     fn at_values(&self, values: &[Self::Type]) -> Option<Self::Enum> {
         unsafe {
             let set = create_set_of_geometries(values);
             let result = meos_sys::temporal_at_values(self.inner(), set);
-            if !result.is_null() {
-                Some(factory::<Self::Enum>(result))
-            } else {
+            if result.is_null() {
                 None
+            } else {
+                Some(factory::<Self::Enum>(result))
             }
         }
     }
