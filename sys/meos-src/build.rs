@@ -14,7 +14,7 @@ fn main() {
         .build();
 
     let mut config = cmake::Config::new("source");
-    config.define("MEOS", "1").very_verbose(true).define("BUILD_SHARED_LIBS", "OFF");
+    config.define("MEOS", "1").very_verbose(true).define("BUILD_SHARED_LIBS", "OFF").define("NPOINT", "OFF");
 
     // Collect include paths from dependencies
     let mut prefix_paths = Vec::new();
