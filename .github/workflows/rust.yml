@@ -24,7 +24,7 @@ jobs:
 
     - name: Install MEOS
       run: |
-        git clone https://github.com/MobilityDB/MobilityDB.git
+        git clone --branch stable-1.3 https://github.com/MobilityDB/MobilityDB.git
         mkdir MobilityDB/build
         cd MobilityDB/build
         cmake .. -DMEOS=on
