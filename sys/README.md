@@ -69,8 +69,6 @@ Additionally, the git submodules (JSON-C, GSL) must be initialized before buildi
 git submodule update --init --recursive
 ```
 
-
-
 > **Note:** If you have a system `libmeos.so` installed (e.g. at
 > `/usr/local/lib/libmeos.so`), remove or unload it before using `bundled` to
 > avoid conflicts.
@@ -80,8 +78,4 @@ Compilation will take longer due to building all dependencies from source.
 ### Bindgen (`bindgen`)
 
 Generates bindings at build time from your system-installed MEOS headers instead
-of using the prebuilt ones. Useful when your installed version differs slightly
-from the prebuilt snapshots. Requires `libclang` to be installed.
-
-When `bundled` is active, `bindgen` is implied automatically and generates
-bindings from the bundled source headers.
+of using the prebuilt ones.

@@ -27,7 +27,29 @@ Add the following dependency to your `Cargo.toml`:
 [dependencies]
 meos = "0.2"
 ```
-Ensure that the `meos` C library is installed on your system. Follow the installation instructions on the [MEOS website](https://github.com/MobilityDB/MobilityDB/?tab=readme-ov-file#requirements).
+
+This requires MEOS 1.3 to be installed on your system. Follow the [installation instructions](https://github.com/MobilityDB/MobilityDB/?tab=readme-ov-file#requirements) on the MEOS website.
+
+Alternatively, enable the `bundled` feature to build MEOS and its dependencies from source:
+
+```toml
+meos = { version = "0.2", features = ["bundled"] }
+```
+
+This requires the following build tools:
+
+```bash
+# Debian/Ubuntu
+apt-get install cmake clang libclang-dev pkg-config sqlite3 libsqlite3-dev
+```
+
+And the git submodules must be initialized:
+
+```bash
+git submodule update --init --recursive
+```
+
+See [sys/README.md](./sys/README.md) for more details and options.
 
 ## Key Features
 
@@ -126,8 +148,7 @@ Right now it should only be used in single-threaded applications. In the foresee
 
 ## Build
 
-This crate links dynamically to your system-installed `meos`. See [sys/README.md](./sys/README.md) for
-more information.
+This crate links dynamically to your system-installed `meos`, or can build it from source via the `bundled` feature. See [sys/README.md](./sys/README.md) for more information.
 
 ## Contributing
 

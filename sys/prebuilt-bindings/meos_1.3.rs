@@ -749,6 +749,9 @@ extern "C" {
     pub fn float_log10(d: f64) -> f64;
 }
 extern "C" {
+    pub fn float8_out(d: f64, maxdd: ::std::os::raw::c_int) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
     pub fn float_round(d: f64, maxdd: ::std::os::raw::c_int) -> f64;
 }
 extern "C" {
@@ -769,7 +772,7 @@ extern "C" {
     ) -> *mut Interval;
 }
 extern "C" {
-    pub fn minus_date_date(d1: DateADT, d2: DateADT) -> *mut Interval;
+    pub fn minus_date_date(d1: DateADT, d2: DateADT) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn minus_date_int(d: DateADT, days: int32) -> DateADT;
@@ -823,6 +826,9 @@ extern "C" {
     pub fn text_copy(txt: *const text) -> *mut text;
 }
 extern "C" {
+    pub fn text_in(str_: *const ::std::os::raw::c_char) -> *mut text;
+}
+extern "C" {
     pub fn text_initcap(txt: *const text) -> *mut text;
 }
 extern "C" {
@@ -851,6 +857,9 @@ extern "C" {
 }
 extern "C" {
     pub fn bigintset_out(set: *const Set) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn bigintspan_expand(s: *const Span, value: int64) -> *mut Span;
 }
 extern "C" {
     pub fn bigintspan_in(str_: *const ::std::os::raw::c_char) -> *mut Span;
@@ -892,6 +901,9 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
+    pub fn floatspan_expand(s: *const Span, value: f64) -> *mut Span;
+}
+extern "C" {
     pub fn floatspan_in(str_: *const ::std::os::raw::c_char) -> *mut Span;
 }
 extern "C" {
@@ -914,6 +926,9 @@ extern "C" {
 }
 extern "C" {
     pub fn intset_out(set: *const Set) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn intspan_expand(s: *const Span, value: int32) -> *mut Span;
 }
 extern "C" {
     pub fn intspan_in(str_: *const ::std::os::raw::c_char) -> *mut Span;
@@ -1054,7 +1069,7 @@ extern "C" {
     pub fn spanset_make(spans: *mut Span, count: ::std::os::raw::c_int) -> *mut SpanSet;
 }
 extern "C" {
-    pub fn textset_make(values: *mut *const text, count: ::std::os::raw::c_int) -> *mut Set;
+    pub fn textset_make(values: *mut *mut text, count: ::std::os::raw::c_int) -> *mut Set;
 }
 extern "C" {
     pub fn tstzset_make(values: *const TimestampTz, count: ::std::os::raw::c_int) -> *mut Set;
@@ -1563,9 +1578,6 @@ extern "C" {
         hasshift: bool,
         haswidth: bool,
     ) -> *mut SpanSet;
-}
-extern "C" {
-    pub fn numspan_expand(s: *const Span, value: Datum) -> *mut Span;
 }
 extern "C" {
     pub fn tstzspan_expand(s: *const Span, interv: *const Interval) -> *mut Span;
@@ -3017,6 +3029,12 @@ extern "C" {
     pub fn timestamptz_to_tbox(t: TimestampTz) -> *mut TBox;
 }
 extern "C" {
+    pub fn tbox_hash(box_: *const TBox) -> uint32;
+}
+extern "C" {
+    pub fn tbox_hash_extended(box_: *const TBox, seed: uint64) -> uint64;
+}
+extern "C" {
     pub fn tbox_hast(box_: *const TBox) -> bool;
 }
 extern "C" {
@@ -3059,19 +3077,23 @@ extern "C" {
     pub fn tboxint_xmin(box_: *const TBox, result: *mut ::std::os::raw::c_int) -> bool;
 }
 extern "C" {
-    pub fn tbox_expand_float(box_: *const TBox, d: f64) -> *mut TBox;
-}
-extern "C" {
-    pub fn tbox_expand_int(box_: *const TBox, i: ::std::os::raw::c_int) -> *mut TBox;
-}
-extern "C" {
     pub fn tbox_expand_time(box_: *const TBox, interv: *const Interval) -> *mut TBox;
 }
 extern "C" {
     pub fn tbox_round(box_: *const TBox, maxdd: ::std::os::raw::c_int) -> *mut TBox;
 }
 extern "C" {
-    pub fn tbox_shift_scale_float(
+    pub fn tbox_shift_scale_time(
+        box_: *const TBox,
+        shift: *const Interval,
+        duration: *const Interval,
+    ) -> *mut TBox;
+}
+extern "C" {
+    pub fn tfloatbox_expand(box_: *const TBox, d: f64) -> *mut TBox;
+}
+extern "C" {
+    pub fn tfloatbox_shift_scale(
         box_: *const TBox,
         shift: f64,
         width: f64,
@@ -3080,19 +3102,15 @@ extern "C" {
     ) -> *mut TBox;
 }
 extern "C" {
-    pub fn tbox_shift_scale_int(
+    pub fn tintbox_expand(box_: *const TBox, i: ::std::os::raw::c_int) -> *mut TBox;
+}
+extern "C" {
+    pub fn tintbox_shift_scale(
         box_: *const TBox,
         shift: ::std::os::raw::c_int,
         width: ::std::os::raw::c_int,
         hasshift: bool,
         haswidth: bool,
-    ) -> *mut TBox;
-}
-extern "C" {
-    pub fn tbox_shift_scale_time(
-        box_: *const TBox,
-        shift: *const Interval,
-        duration: *const Interval,
     ) -> *mut TBox;
 }
 extern "C" {
@@ -3286,7 +3304,7 @@ extern "C" {
 }
 extern "C" {
     pub fn tsequence_make(
-        instants: *mut *const TInstant,
+        instants: *mut *mut TInstant,
         count: ::std::os::raw::c_int,
         lower_inc: bool,
         upper_inc: bool,
@@ -3296,14 +3314,14 @@ extern "C" {
 }
 extern "C" {
     pub fn tsequenceset_make(
-        sequences: *mut *const TSequence,
+        sequences: *mut *mut TSequence,
         count: ::std::os::raw::c_int,
         normalize: bool,
     ) -> *mut TSequenceSet;
 }
 extern "C" {
     pub fn tsequenceset_make_gaps(
-        instants: *mut *const TInstant,
+        instants: *mut *mut TInstant,
         count: ::std::os::raw::c_int,
         interp: interpType,
         maxt: *const Interval,
@@ -3414,6 +3432,14 @@ extern "C" {
 }
 extern "C" {
     pub fn temporal_num_timestamps(temp: *const Temporal) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn temporal_segm_duration(
+        temp: *const Temporal,
+        duration: *const Interval,
+        atleast: bool,
+        strict: bool,
+    ) -> *mut TSequenceSet;
 }
 extern "C" {
     pub fn temporal_segments(
@@ -3582,7 +3608,7 @@ extern "C" {
 }
 extern "C" {
     pub fn temparr_round(
-        temp: *mut *const Temporal,
+        temp: *mut *mut Temporal,
         count: ::std::os::raw::c_int,
         maxdd: ::std::os::raw::c_int,
     ) -> *mut *mut Temporal;
@@ -3708,7 +3734,7 @@ extern "C" {
 }
 extern "C" {
     pub fn temporal_merge_array(
-        temparr: *mut *const Temporal,
+        temparr: *mut *mut Temporal,
         count: ::std::os::raw::c_int,
     ) -> *mut Temporal;
 }
@@ -3724,6 +3750,13 @@ extern "C" {
 }
 extern "C" {
     pub fn tbool_minus_value(temp: *const Temporal, b: bool) -> *mut Temporal;
+}
+extern "C" {
+    pub fn temporal_after_timestamptz(
+        temp: *const Temporal,
+        t: TimestampTz,
+        strict: bool,
+    ) -> *mut Temporal;
 }
 extern "C" {
     pub fn temporal_at_max(temp: *const Temporal) -> *mut Temporal;
@@ -3745,6 +3778,13 @@ extern "C" {
 }
 extern "C" {
     pub fn temporal_at_values(temp: *const Temporal, set: *const Set) -> *mut Temporal;
+}
+extern "C" {
+    pub fn temporal_before_timestamptz(
+        temp: *const Temporal,
+        t: TimestampTz,
+        strict: bool,
+    ) -> *mut Temporal;
 }
 extern "C" {
     pub fn temporal_minus_max(temp: *const Temporal) -> *mut Temporal;
@@ -4742,6 +4782,9 @@ extern "C" {
 }
 extern "C" {
     pub fn tnumber_abs(temp: *const Temporal) -> *mut Temporal;
+}
+extern "C" {
+    pub fn tnumber_trend(temp: *const Temporal) -> *mut Temporal;
 }
 extern "C" {
     pub fn float_angular_difference(degrees1: f64, degrees2: f64) -> f64;
@@ -5858,6 +5901,38 @@ extern "C" {
     pub fn geom_in(str_: *const ::std::os::raw::c_char, typmod: int32) -> *mut GSERIALIZED;
 }
 extern "C" {
+    pub fn box3d_make(
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        zmin: f64,
+        zmax: f64,
+        srid: i32,
+    ) -> *mut BOX3D;
+}
+extern "C" {
+    pub fn box3d_out(
+        box_: *const BOX3D,
+        maxdd: ::std::os::raw::c_int,
+    ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn gbox_make(
+        hasz: bool,
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        zmin: f64,
+        zmax: f64,
+    ) -> *mut GBOX;
+}
+extern "C" {
+    pub fn gbox_out(box_: *const GBOX, maxdd: ::std::os::raw::c_int)
+        -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
     pub fn geo_copy(g: *const GSERIALIZED) -> *mut GSERIALIZED;
 }
 extern "C" {
@@ -5880,6 +5955,9 @@ extern "C" {
 }
 extern "C" {
     pub fn geo_is_empty(g: *const GSERIALIZED) -> bool;
+}
+extern "C" {
+    pub fn geo_is_unitary(gs: *const GSERIALIZED) -> bool;
 }
 extern "C" {
     pub fn geo_typename(type_: ::std::os::raw::c_int) -> *const ::std::os::raw::c_char;
@@ -5925,7 +6003,7 @@ extern "C" {
     pub fn geo_srid(gs: *const GSERIALIZED) -> i32;
 }
 extern "C" {
-    pub fn geo_transform(geom: *mut GSERIALIZED, srid_to: i32) -> *mut GSERIALIZED;
+    pub fn geo_transform(geom: *const GSERIALIZED, srid_to: i32) -> *mut GSERIALIZED;
 }
 extern "C" {
     pub fn geo_transform_pipeline(
@@ -5948,13 +6026,22 @@ extern "C" {
     ) -> *mut GSERIALIZED;
 }
 extern "C" {
-    pub fn geo_npoints(gs: *const GSERIALIZED) -> ::std::os::raw::c_int;
+    pub fn geo_num_points(gs: *const GSERIALIZED) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn geo_ngeos(gs: *const GSERIALIZED) -> ::std::os::raw::c_int;
+    pub fn geo_num_geos(gs: *const GSERIALIZED) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn geo_geoN(geom: *const GSERIALIZED, n: ::std::os::raw::c_int) -> *mut GSERIALIZED;
+    pub fn geo_geo_n(geom: *const GSERIALIZED, n: ::std::os::raw::c_int) -> *mut GSERIALIZED;
+}
+extern "C" {
+    pub fn geo_pointarr(
+        gs: *const GSERIALIZED,
+        count: *mut ::std::os::raw::c_int,
+    ) -> *mut *mut GSERIALIZED;
+}
+extern "C" {
+    pub fn geo_points(gs: *const GSERIALIZED) -> *mut GSERIALIZED;
 }
 extern "C" {
     pub fn geom_array_union(
@@ -5969,7 +6056,7 @@ extern "C" {
     pub fn geom_buffer(
         gs: *const GSERIALIZED,
         size: f64,
-        params: *mut ::std::os::raw::c_char,
+        params: *const ::std::os::raw::c_char,
     ) -> *mut GSERIALIZED;
 }
 extern "C" {
@@ -5988,6 +6075,16 @@ extern "C" {
     ) -> *mut GSERIALIZED;
 }
 extern "C" {
+    pub fn geom_intersection2d_coll(
+        gs1: *const GSERIALIZED,
+        gs2: *const GSERIALIZED,
+    ) -> *mut GSERIALIZED;
+}
+extern "C" {
+    pub fn geom_min_bounding_radius(geom: *const GSERIALIZED, radius: *mut f64)
+        -> *mut GSERIALIZED;
+}
+extern "C" {
     pub fn geom_shortestline2d(gs1: *const GSERIALIZED, s2: *const GSERIALIZED)
         -> *mut GSERIALIZED;
 }
@@ -5996,11 +6093,11 @@ extern "C" {
         -> *mut GSERIALIZED;
 }
 extern "C" {
-    pub fn geom_unary_union(gs: *mut GSERIALIZED, prec: f64) -> *mut GSERIALIZED;
+    pub fn geom_unary_union(gs: *const GSERIALIZED, prec: f64) -> *mut GSERIALIZED;
 }
 extern "C" {
     pub fn line_interpolate_point(
-        gs: *mut GSERIALIZED,
+        gs: *const GSERIALIZED,
         distance_fraction: f64,
         repeat: bool,
     ) -> *mut GSERIALIZED;
@@ -6110,7 +6207,7 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
-    pub fn geoset_make(values: *mut *const GSERIALIZED, count: ::std::os::raw::c_int) -> *mut Set;
+    pub fn geoset_make(values: *mut *mut GSERIALIZED, count: ::std::os::raw::c_int) -> *mut Set;
 }
 extern "C" {
     pub fn geo_to_set(gs: *const GSERIALIZED) -> *mut Set;
@@ -6256,6 +6353,12 @@ extern "C" {
 }
 extern "C" {
     pub fn stbox_area(box_: *const STBox, spheroid: bool) -> f64;
+}
+extern "C" {
+    pub fn stbox_hash(box_: *const STBox) -> uint32;
+}
+extern "C" {
+    pub fn stbox_hash_extended(box_: *const STBox, seed: uint64) -> uint64;
 }
 extern "C" {
     pub fn stbox_hast(box_: *const STBox) -> bool;
@@ -6442,12 +6545,6 @@ extern "C" {
     pub fn stbox_ne(box1: *const STBox, box2: *const STBox) -> bool;
 }
 extern "C" {
-    pub fn tgeo_out(
-        temp: *const Temporal,
-        maxdd: ::std::os::raw::c_int,
-    ) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
     pub fn tgeogpoint_from_mfjson(str_: *const ::std::os::raw::c_char) -> *mut Temporal;
 }
 extern "C" {
@@ -6479,6 +6576,12 @@ extern "C" {
 }
 extern "C" {
     pub fn tspatial_as_text(
+        temp: *const Temporal,
+        maxdd: ::std::os::raw::c_int,
+    ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn tspatial_out(
         temp: *const Temporal,
         maxdd: ::std::os::raw::c_int,
     ) -> *mut ::std::os::raw::c_char;
@@ -7528,6 +7631,7 @@ extern "C" {
         ngeoms: u32,
         tolerance: f64,
         minpoints: ::std::os::raw::c_int,
+        count: *mut ::std::os::raw::c_int,
     ) -> *mut u32;
 }
 extern "C" {
