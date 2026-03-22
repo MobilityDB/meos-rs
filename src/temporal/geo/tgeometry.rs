@@ -23,7 +23,7 @@ use std::{ffi::CString, hash::Hash, mem, ptr, str::FromStr};
 
 use super::tgeo::{
     create_set_of_geometries, geometry_to_gserialized, gserialized_to_geometry, impl_tgeo_type,
-    impl_tpoint_traits, point_to_gserialized_geog, point_to_gserialized_geom, Point, TGeoTrait,
+    impl_tpoint_traits, geo_to_gserialized_geog, geo_to_gserialized_geom, Point, TGeoTrait,
 };
 
 impl_tgeo_type!(TGeometry, false, tgeoinst_make, tgeometry_in, tgeometry_from_mfjson);

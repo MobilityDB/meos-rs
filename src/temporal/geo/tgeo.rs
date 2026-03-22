@@ -15,12 +15,12 @@ use std::{
 #[derive(Clone, Copy)]
 pub struct Point(f64, f64, Option<f64>);
 
-pub(super) fn point_to_gserialized_geom(point: Point) -> *mut meos_sys::GSERIALIZED {
+pub(super) fn geo_to_gserialized_geom(point: Point) -> *mut meos_sys::GSERIALIZED {
     let cstring = CString::new(point.to_string()).unwrap();
     unsafe { meos_sys::geom_in(cstring.as_ptr().cast_mut(), -1) }
 }
 
-pub(super) fn point_to_gserialized_geog(point: Point) -> *mut meos_sys::GSERIALIZED {
+pub(super) fn geo_to_gserialized_geog(point: Point) -> *mut meos_sys::GSERIALIZED {
     let cstring = CString::new(point.to_string()).unwrap();
     unsafe { meos_sys::geog_in(cstring.as_ptr().cast_mut(), -1) }
 }
@@ -66,7 +66,7 @@ impl fmt::Display for Point {
 
 pub trait TGeoTrait: Temporal {
     /// The only geodetic-specific method — each concrete type implements this once.
-    fn point_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED;
+    fn geo_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED;
     /// Returns the temporal point as a WKT string.
     ///
     /// ## Arguments
@@ -489,7 +489,7 @@ pub trait TGeoTrait: Temporal {
     ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
     ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
     fn at_point(&self, point: Point) -> Self::Enum {
-        let geo = Self::point_to_gserialized(point);
+        let geo = Self::geo_to_gserialized(point);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_at_value(self.inner(), geo) })
     }
 
@@ -552,7 +552,7 @@ pub trait TGeoTrait: Temporal {
     ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
     ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
     fn minus_point(&self, point: Point) -> Self::Enum {
-        let geo = Self::point_to_gserialized(point);
+        let geo = Self::geo_to_gserialized(point);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_minus_value(self.inner(), geo) })
     }
 
@@ -876,7 +876,7 @@ pub trait TGeoTrait: Temporal {
     ///
     /// * `distance_tgeo_point`, `distance_tgeo_tgeo`
     fn distance_to_point(&self, point: Point) -> TFloat {
-        let point = Self::point_to_gserialized(point);
+        let point = Self::geo_to_gserialized(point);
         factory::<TFloat>(unsafe { meos_sys::tdistance_tgeo_geo(self.inner(), point) })
     }
 
@@ -1132,11 +1132,11 @@ macro_rules! impl_tpoint_traits {
     ($type:ty, $temporal_type:ident, $geodetic:expr, $enum_prefix:ident) => {
         paste::paste! {
             impl TGeoTrait for $type {
-                fn point_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED {
+                fn geo_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED {
                     if $geodetic {
-                        point_to_gserialized_geog(point)
+                        geo_to_gserialized_geog(point)
                     } else {
-                        point_to_gserialized_geom(point)
+                        geo_to_gserialized_geom(point)
                     }
                 }
             }
@@ -1356,8 +1356,8 @@ macro_rules! impl_tgeo_type {
                 SequenceSet([<$prefix SequenceSet>]),
             }
             impl TGeoTrait for $prefix {
-                fn point_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED {
-                    if $geodetic { point_to_gserialized_geog(point) } else { point_to_gserialized_geom(point) }
+                fn geo_to_gserialized(point: Point) -> *mut meos_sys::GSERIALIZED {
+                    if $geodetic { geo_to_gserialized_geog(point) } else { geo_to_gserialized_geom(point) }
                 }
             }
             impl MeosEnum for $prefix {

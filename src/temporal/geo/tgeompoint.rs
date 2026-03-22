@@ -23,13 +23,23 @@ use std::{ffi::CString, hash::Hash, mem, ptr, str::FromStr};
 
 use super::tgeo::{
     create_set_of_geometries, geometry_to_gserialized, gserialized_to_geometry, impl_tgeo_type,
-    impl_tpoint_traits, point_to_gserialized_geog, point_to_gserialized_geom, Point, TGeoTrait,
+    impl_tpoint_traits, geo_to_gserialized_geog, geo_to_gserialized_geom, Point, TGeoTrait,
 };
 
-impl_tgeo_type!(
-    TGeography,
-    true,
-    tgeoinst_make,
-    tgeography_in,
-    tgeography_from_mfjson
-);
+impl_tgeo_type!(TGeomPoint, false, tpointinst_make, tgeompoint_in, tgeompoint_from_mfjson);
+
+impl TGeomPointSequence {
+    pub fn direction(&self) -> f64 {
+        let mut result = 0.;
+        unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
+        result
+    }
+}
+
+impl TGeomPointSequenceSet {
+    pub fn direction(&self) -> f64 {
+        let mut result = 0.;
+        unsafe { meos_sys::tpoint_direction(self.inner(), ptr::addr_of_mut!(result)) };
+        result
+    }
+}
