@@ -1148,6 +1148,18 @@ pub trait TGeoTrait: Temporal {
 
     // ------------------------- Geometry restrictions -------------------------
 
+    /// Returns the portion of `self` at the given `point`. MEOS: `tgeo_at_value`
+    fn at_point(&self, point: Point) -> Option<Self::Enum> {
+        let result = unsafe { meos_sys::tgeo_at_value(self.inner(), Self::geo_to_gserialized(point)) };
+        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+    }
+
+    /// Returns the portion of `self` excluding the given `point`. MEOS: `tgeo_minus_value`
+    fn minus_point(&self, point: Point) -> Option<Self::Enum> {
+        let result = unsafe { meos_sys::tgeo_minus_value(self.inner(), Self::geo_to_gserialized(point)) };
+        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+    }
+
     /// Returns the portion of `self` whose trajectory intersects `geometry`. MEOS: `tgeo_at_geom`
     fn at_geom(&self, geometry: &Geometry) -> Option<Self::Enum> {
         let geo = geometry_to_gserialized(geometry);
@@ -1160,6 +1172,27 @@ pub trait TGeoTrait: Temporal {
         let geo = geometry_to_gserialized(geometry);
         let result = unsafe { meos_sys::tgeo_minus_geom(self.inner(), geo) };
         if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+    }
+
+    /// Returns the portions of `self` that intersect any of `geometries`. MEOS: `tgeo_at_geom`
+    fn at_geometries(&self, geometries: &[Geometry]) -> Option<Self::Enum> {
+        let union = geometries.iter().try_fold(None::<Geometry>, |acc, g| {
+            let next = match acc { None => Geometry::new_from_wkt(&g.to_wkt().unwrap()).unwrap(), Some(a) => a.union(g).ok()? };
+            Some(Some(next))
+        })??;
+        self.at_geom(&union)
+    }
+
+    /// Returns the portions of `self` that do not intersect any of `geometries`. MEOS: `tgeo_minus_geom`
+    fn minus_geometries(&self, geometries: &[Geometry]) -> Option<Self::Enum> {
+        let mut result = unsafe { meos_sys::temporal_copy(self.inner()) };
+        for g in geometries {
+            let geo = geometry_to_gserialized(g);
+            let next = unsafe { meos_sys::tgeo_minus_geom(result, geo) };
+            if next.is_null() { return None; }
+            result = next;
+        }
+        Some(factory::<Self::Enum>(result))
     }
 
     /// Returns the portion of `self` within `stbox`. MEOS: `tgeo_at_stbox`
