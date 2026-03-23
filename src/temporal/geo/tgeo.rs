@@ -724,6 +724,102 @@ pub trait TGeoTrait: Temporal {
         }
     }
 
+    // ------------------------- Left/Right/Before/After vs Enum --------------
+
+    fn is_left(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::left_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_over_or_left(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::overleft_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_right(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::right_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_over_or_right(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::overright_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_before(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::before_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_over_or_before(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::overbefore_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_after(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::after_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_over_or_after(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::overafter_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_adjacent_to(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::adjacent_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn overlaps_with(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::overlaps_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_same_as(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::same_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn is_contained_in(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::contained_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+    fn contains_temporal(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::contains_tspatial_tspatial(self.inner(), other.inner()) }
+    }
+
+    // ------------------------- Positional vs STBox ---------------------------
+
+    fn is_left_of_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::left_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_left_of_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overleft_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_right_of_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::right_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_right_of_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overright_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_below_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::below_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_below_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overbelow_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_above_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::above_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_above_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overabove_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_before_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::before_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_before_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overbefore_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_after_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::after_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_over_or_after_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overafter_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_adjacent_to_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::adjacent_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn overlaps_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::overlaps_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_same_as_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::same_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn is_contained_in_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::contained_tspatial_stbox(self.inner(), stbox.inner()) }
+    }
+    fn contains_stbox(&self, stbox: &STBox) -> bool {
+        unsafe { meos_sys::contains_stbox_tspatial(stbox.inner(), self.inner()) }
+    }
+
     /// Returns a new temporal boolean indicating whether the temporal point is contained by `container`.
     ///
     /// # Arguments
@@ -1064,6 +1160,239 @@ pub trait TGeoTrait: Temporal {
     //         tpoint_space_split(self.inner(), xsize, ysz, zsz, gs, bitmatrix, include_border);
     //     (0..count).map(|i| Temporal::new(fragments[i])).collect()
     // }
+
+    // ------------------------- Ever/Always spatial relations -----------------
+
+    fn ever_equal_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::ever_eq_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_equal(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::ever_eq_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_not_equal_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::ever_ne_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_not_equal(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::ever_ne_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn always_equal_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::always_eq_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn always_equal(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::always_eq_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn always_not_equal_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::always_ne_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn always_not_equal(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::always_ne_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_contains_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::econtains_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_contains(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::econtains_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_covers_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::ecovers_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_covers(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::ecovers_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_disjoint_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::edisjoint_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_intersects_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::eintersects_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_intersects(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::eintersects_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_touches_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::etouches_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn ever_touches(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::etouches_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn ever_within_distance_of_geometry(&self, geometry: &Geometry, dist: f64) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::edwithin_tgeo_geo(self.inner(), geo, dist) == 1 }
+    }
+
+    fn ever_within_distance(&self, other: &Self::Enum, dist: f64) -> bool {
+        unsafe { meos_sys::edwithin_tgeo_tgeo(self.inner(), other.inner(), dist) == 1 }
+    }
+
+    fn always_contains_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::acontains_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn always_contains(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::acontains_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn always_intersects_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::aintersects_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn always_intersects(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::aintersects_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn always_touches_geometry(&self, geometry: &Geometry) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::atouches_tgeo_geo(self.inner(), geo) == 1 }
+    }
+
+    fn always_touches(&self, other: &Self::Enum) -> bool {
+        unsafe { meos_sys::atouches_tgeo_tgeo(self.inner(), other.inner()) == 1 }
+    }
+
+    fn always_within_distance_of_geometry(&self, geometry: &Geometry, dist: f64) -> bool {
+        let geo = geometry_to_gserialized(geometry);
+        unsafe { meos_sys::adwithin_tgeo_geo(self.inner(), geo, dist) == 1 }
+    }
+
+    fn always_within_distance(&self, other: &Self::Enum, dist: f64) -> bool {
+        unsafe { meos_sys::adwithin_tgeo_tgeo(self.inner(), other.inner(), dist) == 1 }
+    }
+
+    // ------------------------- Geometry restrictions -------------------------
+
+    fn at_geom(&self, geometry: &Geometry) -> Option<Self::Enum> {
+        let geo = geometry_to_gserialized(geometry);
+        let result = unsafe { meos_sys::tgeo_at_geom(self.inner(), geo) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
+    }
+
+    fn minus_geom(&self, geometry: &Geometry) -> Option<Self::Enum> {
+        let geo = geometry_to_gserialized(geometry);
+        let result = unsafe { meos_sys::tgeo_minus_geom(self.inner(), geo) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
+    }
+
+    fn at_stbox(&self, stbox: &STBox, border_inc: bool) -> Option<Self::Enum> {
+        let result = unsafe { meos_sys::tgeo_at_stbox(self.inner(), stbox.inner(), border_inc) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
+    }
+
+    fn minus_stbox(&self, stbox: &STBox, border_inc: bool) -> Option<Self::Enum> {
+        let result = unsafe { meos_sys::tgeo_minus_stbox(self.inner(), stbox.inner(), border_inc) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
+    }
+
+    // ------------------------- Spatial aggregates ----------------------------
+
+    fn centroid(&self) -> Result<Geometry, geos::Error> {
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_centroid(self.inner()) as *mut _ })
+    }
+
+    fn convex_hull(&self) -> Result<Geometry, geos::Error> {
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_convex_hull(self.inner()) })
+    }
+
+    fn traversed_area(&self, unary_union: bool) -> Result<Geometry, geos::Error> {
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_traversed_area(self.inner(), unary_union) })
+    }
+
+    fn nearest_approach_distance_to_stbox(&self, stbox: &STBox) -> f64 {
+        unsafe { meos_sys::nad_tgeo_stbox(self.inner(), stbox.inner()) }
+    }
+
+    fn value_n(&self, n: usize) -> Option<Result<Geometry, geos::Error>> {
+        let mut result: *mut meos_sys::GSERIALIZED = ptr::null_mut();
+        let found =
+            unsafe { meos_sys::tgeo_value_n(self.inner(), n as i32, ptr::addr_of_mut!(result)) };
+        if found {
+            Some(gserialized_to_geometry(result))
+        } else {
+            None
+        }
+    }
+
+    fn contains_geometry(&self, geometry: &Geometry) -> Self::TBoolType {
+        let geo = geometry_to_gserialized(geometry);
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::tcontains_tgeo_geo(self.inner(), geo, false, false)
+        })
+    }
+
+    fn contains(&self, other: &Self::Enum) -> Self::TBoolType {
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::tcontains_tgeo_tgeo(self.inner(), other.inner(), false, false)
+        })
+    }
+
+    fn covers_geometry(&self, geometry: &Geometry) -> Self::TBoolType {
+        let geo = geometry_to_gserialized(geometry);
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::tcovers_tgeo_geo(self.inner(), geo, false, false)
+        })
+    }
+
+    fn covers(&self, other: &Self::Enum) -> Self::TBoolType {
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::tcovers_tgeo_tgeo(self.inner(), other.inner(), false, false)
+        })
+    }
+
+    fn disjoint(&self, other: &Self::Enum) -> Self::TBoolType {
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::tdisjoint_tgeo_tgeo(self.inner(), other.inner(), false, false)
+        })
+    }
+
+    fn touches(&self, other: &Self::Enum) -> Self::TBoolType {
+        Self::TBoolType::from_inner_as_temporal(unsafe {
+            meos_sys::ttouches_tgeo_tgeo(self.inner(), other.inner(), false, false)
+        })
+    }
+
+    // ------------------------- Splits and Subtypes ---------------------------
 
     // /// Splits `self` into fragments with respect to space and tstzspan buckets.
     // ///
