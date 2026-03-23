@@ -7,10 +7,12 @@ pub use number::tint::*;
 pub use number::tnumber::TNumber;
 
 #[cfg(feature = "geos")]
-mod point;
-pub use point::tgeogpoint::*;
-pub use point::tgeompoint::*;
-pub use point::tpoint::*;
+mod geo;
+pub use geo::tgeogpoint::*;
+pub use geo::tgeompoint::*;
+pub use geo::tgeography::*;
+pub use geo::tgeometry::*;
+pub use geo::tgeo::*;
 
 mod tbool;
 pub use tbool::*;
