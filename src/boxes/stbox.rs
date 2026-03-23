@@ -289,10 +289,6 @@ impl STBox {
     pub fn is_over_or_front(&self, other: &STBox) -> bool { unsafe { meos_sys::overfront_stbox_stbox(self.inner(), other.inner()) } }
     pub fn is_back(&self, other: &STBox) -> bool { unsafe { meos_sys::back_stbox_stbox(self.inner(), other.inner()) } }
     pub fn is_over_or_back(&self, other: &STBox) -> bool { unsafe { meos_sys::overback_stbox_stbox(self.inner(), other.inner()) } }
-    pub fn is_before(&self, other: &STBox) -> bool { unsafe { meos_sys::before_stbox_stbox(self.inner(), other.inner()) } }
-    pub fn is_over_or_before(&self, other: &STBox) -> bool { unsafe { meos_sys::overbefore_stbox_stbox(self.inner(), other.inner()) } }
-    pub fn is_after(&self, other: &STBox) -> bool { unsafe { meos_sys::after_stbox_stbox(self.inner(), other.inner()) } }
-    pub fn is_over_or_after(&self, other: &STBox) -> bool { unsafe { meos_sys::overafter_stbox_stbox(self.inner(), other.inner()) } }
     pub fn is_adjacent(&self, other: &STBox) -> bool { unsafe { meos_sys::adjacent_stbox_stbox(self.inner(), other.inner()) } }
     pub fn overlaps(&self, other: &STBox) -> bool { unsafe { meos_sys::overlaps_stbox_stbox(self.inner(), other.inner()) } }
     pub fn is_same(&self, other: &STBox) -> bool { unsafe { meos_sys::same_stbox_stbox(self.inner(), other.inner()) } }

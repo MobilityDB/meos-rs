@@ -230,8 +230,7 @@ pub trait TGeoTrait: Temporal {
     ///
     /// `tpoint_start_value`
     fn has_z(&self) -> bool {
-        let ptr = unsafe { meos_sys::tpoint_get_z(self.inner()) };
-        !ptr.is_null()
+        unsafe { meos_sys::stbox_hasz(meos_sys::tspatial_to_stbox(self.inner())) }
     }
 
     /// Returns a `STBox` representing the bounding box of the temporal point.
@@ -486,121 +485,14 @@ pub trait TGeoTrait: Temporal {
     ///     A new `TPoint` with the values of `self` restricted to `other`.
     ///
     /// MEOS Functions:
-    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
-    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
     fn at_point(&self, point: Point) -> Self::Enum {
         let geo = Self::geo_to_gserialized(point);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_at_value(self.inner(), geo) })
     }
 
-    /// Returns a new temporal object with the values of `self` restricted to `other`.
-    ///
-    /// Args:
-    ///     other: An object to restrict the values of `self` to.
-    ///
-    /// Returns:
-    ///     A new `TPoint` with the values of `self` restricted to `other`.
-    ///
-    /// MEOS Functions:
-    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
-    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
-    fn at_geometry(&self, geometry: &Geometry) -> Self::Enum {
-        let geo = geometry_to_gserialized(geometry);
-        factory::<Self::Enum>(unsafe { meos_sys::tpoint_at_value(self.inner(), geo) })
-    }
-
-    /// Returns a new temporal object with the values of `self` restricted to `other`.
-    ///
-    /// Args:
-    ///     other: An object to restrict the values of `self` to.
-    ///
-    /// Returns:
-    ///     A new `TPoint` with the values of `self` restricted to `other`.
-    ///
-    /// MEOS Functions:
-    ///     `tpoint_at_value`, `tpoint_at_stbox`, `temporal_at_values`,
-    ///     `temporal_at_timestamp`, `temporal_at_tstzset`, `temporal_at_tstzspan`, `temporal_at_tstzspanset`
-    fn at_geometries(&self, geometries: &[Geometry]) -> Self::Enum {
-        let mut pointers: Vec<_> = geometries
-            .iter()
-            .map(|g| {
-                let bytes = g.to_wkb().unwrap();
-                let bytes_len = bytes.len();
-
-                unsafe {
-                    meos_sys::geo_from_ewkb(
-                        bytes.as_ptr(),
-                        bytes_len,
-                        g.get_srid().expect("No SRID"),
-                    )
-                }
-            })
-            .collect();
-        let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
-        factory::<Self::Enum>(unsafe { meos_sys::temporal_at_values(self.inner(), geoset) })
-    }
-
-    /// Returns a new temporal object with the values of `self` restricted to the complement of `other`.
-    ///
-    /// Args:
-    ///     other: An object to restrict the values of `self` to the complement of.
-    ///
-    /// Returns:
-    ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
-    ///
-    /// MEOS Functions:
-    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
-    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
     fn minus_point(&self, point: Point) -> Self::Enum {
         let geo = Self::geo_to_gserialized(point);
         factory::<Self::Enum>(unsafe { meos_sys::tpoint_minus_value(self.inner(), geo) })
-    }
-
-    /// Returns a new temporal object with the values of `self` restricted to the complement of `other`.
-    ///
-    /// Args:
-    ///     other: An object to restrict the values of `self` to the complement of.
-    ///
-    /// Returns:
-    ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
-    ///
-    /// MEOS Functions:
-    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
-    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
-    fn minus_geometry(&self, geometry: &Geometry) -> Self::Enum {
-        let geo = geometry_to_gserialized(geometry);
-        factory::<Self::Enum>(unsafe { meos_sys::tpoint_minus_value(self.inner(), geo) })
-    }
-
-    /// Returns a new temporal object with the values of `self` restricted to the complement of `other`.
-    ///
-    /// Args:
-    ///     other: An object to restrict the values of `self` to the complement of.
-    ///
-    /// Returns:
-    ///     A new `TPoint` with the values of `self` restricted to the complement of `other`.
-    ///
-    /// MEOS Functions:
-    ///     `tpoint_minus_value`, `tpoint_minus_stbox`, `temporal_minus_values`,
-    ///     `temporal_minus_timestamp`, `temporal_minus_tstzset`, `temporal_minus_tstzspan`, `temporal_minus_tstzspanset`
-    fn minus_geometries(&self, geometries: &[Geometry]) -> Self::Enum {
-        let mut pointers: Vec<_> = geometries
-            .iter()
-            .map(|g| {
-                let bytes = g.to_wkb().unwrap();
-                let bytes_len = bytes.len();
-
-                unsafe {
-                    meos_sys::geo_from_ewkb(
-                        bytes.as_ptr(),
-                        bytes_len,
-                        g.get_srid().expect("No SRID"),
-                    )
-                }
-            })
-            .collect();
-        let geoset = unsafe { meos_sys::geoset_make(pointers.as_mut_ptr(), pointers.len() as i32) };
-        factory::<Self::Enum>(unsafe { meos_sys::temporal_minus_values(self.inner(), geoset) })
     }
 
     // ------------------------- Position Operations ---------------------------
@@ -724,48 +616,6 @@ pub trait TGeoTrait: Temporal {
         }
     }
 
-    // ------------------------- Left/Right/Before/After vs Enum --------------
-
-    fn is_left(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::left_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_over_or_left(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::overleft_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_right(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::right_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_over_or_right(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::overright_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_before(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::before_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_over_or_before(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::overbefore_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_after(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::after_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_over_or_after(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::overafter_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_adjacent_to(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::adjacent_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn overlaps_with(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::overlaps_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_same_as(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::same_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn is_contained_in(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::contained_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-    fn contains_temporal(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::contains_tspatial_tspatial(self.inner(), other.inner()) }
-    }
-
     // ------------------------- Positional vs STBox ---------------------------
 
     fn is_left_of_stbox(&self, stbox: &STBox) -> bool {
@@ -791,18 +641,6 @@ pub trait TGeoTrait: Temporal {
     }
     fn is_over_or_above_stbox(&self, stbox: &STBox) -> bool {
         unsafe { meos_sys::overabove_tspatial_stbox(self.inner(), stbox.inner()) }
-    }
-    fn is_before_stbox(&self, stbox: &STBox) -> bool {
-        unsafe { meos_sys::before_tspatial_stbox(self.inner(), stbox.inner()) }
-    }
-    fn is_over_or_before_stbox(&self, stbox: &STBox) -> bool {
-        unsafe { meos_sys::overbefore_tspatial_stbox(self.inner(), stbox.inner()) }
-    }
-    fn is_after_stbox(&self, stbox: &STBox) -> bool {
-        unsafe { meos_sys::after_tspatial_stbox(self.inner(), stbox.inner()) }
-    }
-    fn is_over_or_after_stbox(&self, stbox: &STBox) -> bool {
-        unsafe { meos_sys::overafter_tspatial_stbox(self.inner(), stbox.inner()) }
     }
     fn is_adjacent_to_stbox(&self, stbox: &STBox) -> bool {
         unsafe { meos_sys::adjacent_tspatial_stbox(self.inner(), stbox.inner()) }
@@ -1168,17 +1006,9 @@ pub trait TGeoTrait: Temporal {
         unsafe { meos_sys::ever_eq_tgeo_geo(self.inner(), geo) == 1 }
     }
 
-    fn ever_equal(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::ever_eq_tgeo_tgeo(self.inner(), other.inner()) == 1 }
-    }
-
     fn ever_not_equal_geometry(&self, geometry: &Geometry) -> bool {
         let geo = geometry_to_gserialized(geometry);
         unsafe { meos_sys::ever_ne_tgeo_geo(self.inner(), geo) == 1 }
-    }
-
-    fn ever_not_equal(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::ever_ne_tgeo_tgeo(self.inner(), other.inner()) == 1 }
     }
 
     fn always_equal_geometry(&self, geometry: &Geometry) -> bool {
@@ -1186,17 +1016,9 @@ pub trait TGeoTrait: Temporal {
         unsafe { meos_sys::always_eq_tgeo_geo(self.inner(), geo) == 1 }
     }
 
-    fn always_equal(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::always_eq_tgeo_tgeo(self.inner(), other.inner()) == 1 }
-    }
-
     fn always_not_equal_geometry(&self, geometry: &Geometry) -> bool {
         let geo = geometry_to_gserialized(geometry);
         unsafe { meos_sys::always_ne_tgeo_geo(self.inner(), geo) == 1 }
-    }
-
-    fn always_not_equal(&self, other: &Self::Enum) -> bool {
-        unsafe { meos_sys::always_ne_tgeo_tgeo(self.inner(), other.inner()) == 1 }
     }
 
     fn ever_contains_geometry(&self, geometry: &Geometry) -> bool {
@@ -1335,8 +1157,9 @@ pub trait TGeoTrait: Temporal {
         gserialized_to_geometry(unsafe { meos_sys::tgeo_convex_hull(self.inner()) })
     }
 
-    fn traversed_area(&self, unary_union: bool) -> Result<Geometry, geos::Error> {
-        gserialized_to_geometry(unsafe { meos_sys::tgeo_traversed_area(self.inner(), unary_union) })
+    fn traversed_area(&self, unary_union: bool) -> Option<Result<Geometry, geos::Error>> {
+        let gs = unsafe { meos_sys::tgeo_traversed_area(self.inner(), unary_union) };
+        if gs.is_null() { None } else { Some(gserialized_to_geometry(gs)) }
     }
 
     fn nearest_approach_distance_to_stbox(&self, stbox: &STBox) -> f64 {
