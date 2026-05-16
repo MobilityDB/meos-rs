@@ -274,6 +274,25 @@ impl STBox {
     pub fn expand_space(&self, value: f64) -> STBox {
         unsafe { Self::from_inner(meos_sys::stbox_expand_space(self.inner(), value)) }
     }
+
+    // ------------------------- Positional operators --------------------------
+
+    pub fn is_left(&self, other: &STBox) -> bool { unsafe { meos_sys::left_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_left(&self, other: &STBox) -> bool { unsafe { meos_sys::overleft_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_right(&self, other: &STBox) -> bool { unsafe { meos_sys::right_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_right(&self, other: &STBox) -> bool { unsafe { meos_sys::overright_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_below(&self, other: &STBox) -> bool { unsafe { meos_sys::below_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_below(&self, other: &STBox) -> bool { unsafe { meos_sys::overbelow_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_above(&self, other: &STBox) -> bool { unsafe { meos_sys::above_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_above(&self, other: &STBox) -> bool { unsafe { meos_sys::overabove_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_front(&self, other: &STBox) -> bool { unsafe { meos_sys::front_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_front(&self, other: &STBox) -> bool { unsafe { meos_sys::overfront_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_back(&self, other: &STBox) -> bool { unsafe { meos_sys::back_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_over_or_back(&self, other: &STBox) -> bool { unsafe { meos_sys::overback_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_adjacent(&self, other: &STBox) -> bool { unsafe { meos_sys::adjacent_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn overlaps(&self, other: &STBox) -> bool { unsafe { meos_sys::overlaps_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_same(&self, other: &STBox) -> bool { unsafe { meos_sys::same_stbox_stbox(self.inner(), other.inner()) } }
+    pub fn is_contained_in(&self, other: &STBox) -> bool { unsafe { meos_sys::contained_stbox_stbox(self.inner(), other.inner()) } }
 }
 
 impl Collection for STBox {
