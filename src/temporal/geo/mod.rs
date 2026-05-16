@@ -1,6 +1,8 @@
 pub mod tgeogpoint;
 pub mod tgeompoint;
-pub mod tpoint;
+pub mod tgeography;
+pub mod tgeometry;
+pub mod tgeo;
 
 #[cfg(test)]
 #[serial_test::serial]

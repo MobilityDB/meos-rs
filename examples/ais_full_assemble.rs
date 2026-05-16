@@ -8,7 +8,7 @@ use std::{
 use chrono::{DateTime, Utc};
 use meos::{
     meos_initialize, TFloatInstant, TFloatSequence, TGeomPoint, TGeomPointInstant,
-    TGeomPointSequence, TInstant, TNumber, TPointTrait, TSequence, Temporal,
+    TGeomPointSequence, TInstant, TNumber, TGeoTrait, TSequence, Temporal,
 };
 
 // Constants

@@ -107,7 +107,7 @@ let trajectory: TGeomPoint = "[POINT(1 1)@2000-01-01 08:00, POINT(2 2)@2000-01-0
 ### Get the shortest distance ever between two temporal points
 
 ```rust
-use meos::{meos_initialize, TGeomPoint, TPointTrait};
+use meos::{meos_initialize, TGeomPoint, TGeoTrait};
 
 meos_initialize();
 
