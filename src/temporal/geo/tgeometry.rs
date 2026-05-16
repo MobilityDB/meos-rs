@@ -22,7 +22,7 @@ use geos::Geometry;
 use std::{ffi::CString, hash::Hash, mem, ptr, str::FromStr};
 
 use super::tgeo::{
-    create_geomset, create_geogset, geometry_to_gserialized, gserialized_to_geometry, impl_tgeo_type,
+    create_geomset, create_geogset, geometry_to_gserialized, geometry_to_gserialized_geog, gserialized_to_geometry, impl_tgeo_type,
     impl_tpoint_traits, geo_to_gserialized_geog, geo_to_gserialized_geom, Point, TGeoTrait,
 };
 

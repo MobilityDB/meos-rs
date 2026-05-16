@@ -30,14 +30,27 @@ pub(super) fn geometry_to_gserialized(geometry: &Geometry) -> *mut GSERIALIZED {
     let wkb: Vec<u8> = writer.write_wkb(geometry).unwrap();
     let wkb_len = wkb.len();
     unsafe {
-        meos_sys::geo_from_ewkb(wkb.as_ptr(), wkb_len, geometry.get_srid().unwrap_or_default())
+        meos_sys::geo_from_ewkb(
+            wkb.as_ptr(),
+            wkb_len,
+            geometry.get_srid().unwrap_or_default(),
+        )
     }
 }
 
 pub(super) fn geometry_to_gserialized_geog(geometry: &Geometry) -> *mut GSERIALIZED {
-    let wkt = geometry.to_wkt().unwrap();
-    let cstring = CString::new(wkt).unwrap();
-    unsafe { meos_sys::geog_in(cstring.as_ptr().cast_mut(), -1) }
+    let mut writer = WKBWriter::new().expect("Failed to create WKBWriter");
+    writer.set_output_dimension(CoordDimensions::ThreeD);
+    let wkb: Vec<u8> = writer.write_wkb(geometry).unwrap();
+    let wkb_len = wkb.len();
+    let geom = unsafe {
+        meos_sys::geo_from_ewkb(
+            wkb.as_ptr(),
+            wkb_len,
+            geometry.get_srid().unwrap_or_default(),
+        )
+    };
+    unsafe { meos_sys::geom_to_geog(geom) }
 }
 
 pub(super) fn gserialized_to_geometry(
@@ -50,29 +63,16 @@ pub(super) fn gserialized_to_geometry(
     Geometry::new_from_wkb(unsafe { slice::from_raw_parts(bytes, size) })
 }
 
-pub(super) fn create_set_of_geometries(values: &[Geometry]) -> *mut meos_sys::Set {
+/// Creates a geometry set (non-geodetic) from a slice of geometries.
+pub(super) fn create_geomset(values: &[Geometry]) -> *mut meos_sys::Set {
     let mut cgeos: Vec<_> = values.iter().map(geometry_to_gserialized).collect();
     unsafe { meos_sys::geoset_make(cgeos.as_mut_ptr(), values.len() as i32) }
 }
 
-/// Creates a geometry set (non-geodetic) from a slice of geometries.
-pub(super) fn create_geomset(values: &[Geometry]) -> *mut meos_sys::Set {
-    let wkt: String = values.iter()
-        .map(|g| g.to_wkt().unwrap())
-        .collect::<Vec<_>>()
-        .join(",");
-    let s = CString::new(format!("{{{}}}", wkt)).unwrap();
-    unsafe { meos_sys::geomset_in(s.as_ptr()) }
-}
-
 /// Creates a geography set (geodetic) from a slice of geometries.
 pub(super) fn create_geogset(values: &[Geometry]) -> *mut meos_sys::Set {
-    let wkt: String = values.iter()
-        .map(|g| g.to_wkt().unwrap())
-        .collect::<Vec<_>>()
-        .join(",");
-    let s = CString::new(format!("{{{}}}", wkt)).unwrap();
-    unsafe { meos_sys::geogset_in(s.as_ptr()) }
+    let mut cgeos: Vec<_> = values.iter().map(geometry_to_gserialized_geog).collect();
+    unsafe { meos_sys::geoset_make(cgeos.as_mut_ptr(), values.len() as i32) }
 }
 
 impl fmt::Display for Point {
@@ -1150,34 +1150,55 @@ pub trait TGeoTrait: Temporal {
 
     /// Returns the portion of `self` at the given `point`. MEOS: `tgeo_at_value`
     fn at_point(&self, point: Point) -> Option<Self::Enum> {
-        let result = unsafe { meos_sys::tgeo_at_value(self.inner(), Self::geo_to_gserialized(point)) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        let result =
+            unsafe { meos_sys::tgeo_at_value(self.inner(), Self::geo_to_gserialized(point)) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     /// Returns the portion of `self` excluding the given `point`. MEOS: `tgeo_minus_value`
     fn minus_point(&self, point: Point) -> Option<Self::Enum> {
-        let result = unsafe { meos_sys::tgeo_minus_value(self.inner(), Self::geo_to_gserialized(point)) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        let result =
+            unsafe { meos_sys::tgeo_minus_value(self.inner(), Self::geo_to_gserialized(point)) };
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     /// Returns the portion of `self` whose trajectory intersects `geometry`. MEOS: `tgeo_at_geom`
     fn at_geom(&self, geometry: &Geometry) -> Option<Self::Enum> {
         let geo = geometry_to_gserialized(geometry);
         let result = unsafe { meos_sys::tgeo_at_geom(self.inner(), geo) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     /// Returns the portion of `self` whose trajectory does not intersect `geometry`. MEOS: `tgeo_minus_geom`
     fn minus_geom(&self, geometry: &Geometry) -> Option<Self::Enum> {
         let geo = geometry_to_gserialized(geometry);
         let result = unsafe { meos_sys::tgeo_minus_geom(self.inner(), geo) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     /// Returns the portions of `self` that intersect any of `geometries`. MEOS: `tgeo_at_geom`
     fn at_geometries(&self, geometries: &[Geometry]) -> Option<Self::Enum> {
         let union = geometries.iter().try_fold(None::<Geometry>, |acc, g| {
-            let next = match acc { None => Geometry::new_from_wkt(&g.to_wkt().unwrap()).unwrap(), Some(a) => a.union(g).ok()? };
+            let next = match acc {
+                None => Geometry::new_from_wkt(&g.to_wkt().unwrap()).unwrap(),
+                Some(a) => a.union(g).ok()?,
+            };
             Some(Some(next))
         })??;
         self.at_geom(&union)
@@ -1189,7 +1210,9 @@ pub trait TGeoTrait: Temporal {
         for g in geometries {
             let geo = geometry_to_gserialized(g);
             let next = unsafe { meos_sys::tgeo_minus_geom(result, geo) };
-            if next.is_null() { return None; }
+            if next.is_null() {
+                return None;
+            }
             result = next;
         }
         Some(factory::<Self::Enum>(result))
@@ -1198,20 +1221,28 @@ pub trait TGeoTrait: Temporal {
     /// Returns the portion of `self` within `stbox`. MEOS: `tgeo_at_stbox`
     fn at_stbox(&self, stbox: &STBox, border_inc: bool) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::tgeo_at_stbox(self.inner(), stbox.inner(), border_inc) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     /// Returns the portion of `self` outside `stbox`. MEOS: `tgeo_minus_stbox`
     fn minus_stbox(&self, stbox: &STBox, border_inc: bool) -> Option<Self::Enum> {
         let result = unsafe { meos_sys::tgeo_minus_stbox(self.inner(), stbox.inner(), border_inc) };
-        if result.is_null() { None } else { Some(factory::<Self::Enum>(result)) }
+        if result.is_null() {
+            None
+        } else {
+            Some(factory::<Self::Enum>(result))
+        }
     }
 
     // ------------------------- Spatial aggregates ----------------------------
 
     /// Returns the time-weighted centroid of `self` as a temporal point. MEOS: `tgeo_centroid`
     fn centroid(&self) -> Result<Geometry, geos::Error> {
-        gserialized_to_geometry(unsafe { meos_sys::tgeo_centroid(self.inner()) as *mut _ })
+        gserialized_to_geometry(unsafe { meos_sys::tgeo_centroid(self.inner()).cast() })
     }
 
     /// Returns the convex hull of the trajectory of `self`. MEOS: `tgeo_convex_hull`
@@ -1222,7 +1253,11 @@ pub trait TGeoTrait: Temporal {
     /// Returns the area traversed by `self`. Only valid for polygon temporal types. MEOS: `tgeo_traversed_area`
     fn traversed_area(&self, unary_union: bool) -> Option<Result<Geometry, geos::Error>> {
         let gs = unsafe { meos_sys::tgeo_traversed_area(self.inner(), unary_union) };
-        if gs.is_null() { None } else { Some(gserialized_to_geometry(gs)) }
+        if gs.is_null() {
+            None
+        } else {
+            Some(gserialized_to_geometry(gs))
+        }
     }
 
     /// Returns the nearest approach distance between `self` and `stbox`. MEOS: `nad_tgeo_stbox`
@@ -1231,10 +1266,15 @@ pub trait TGeoTrait: Temporal {
     }
 
     /// Returns the nth geometry value of `self` (1-based). MEOS: `tgeo_value_n`
-    fn value_n(&self, n: usize) -> Option<Result<Geometry, geos::Error>> {
+    fn value_n(&self, n: usize) -> Result<Option<Geometry>, geos::Error> {
         let mut result: *mut meos_sys::GSERIALIZED = ptr::null_mut();
-        let found = unsafe { meos_sys::tgeo_value_n(self.inner(), n as i32, ptr::addr_of_mut!(result)) };
-        if found { Some(gserialized_to_geometry(result)) } else { None }
+        let found =
+            unsafe { meos_sys::tgeo_value_n(self.inner(), n as i32, ptr::addr_of_mut!(result)) };
+        if found {
+            gserialized_to_geometry(result).map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     /// Returns a `TBool` indicating whether `self` temporally contains `geometry`. MEOS: `tcontains_tgeo_geo`
@@ -1354,7 +1394,7 @@ macro_rules! impl_tpoint_traits {
                     if $geodetic { geo_to_gserialized_geog(point) } else { geo_to_gserialized_geom(point) }
                 }
                 fn geometry_to_gserialized_typed(geom: &Geometry) -> *mut meos_sys::GSERIALIZED {
-                    if $geodetic { super::tgeo::geometry_to_gserialized_geog(geom) } else { geometry_to_gserialized(geom) }
+                    if $geodetic { geometry_to_gserialized_geog(geom) } else { geometry_to_gserialized(geom) }
                 }
             }
             impl Collection for $type {
@@ -1565,7 +1605,7 @@ macro_rules! impl_tgeo_type {
                     if $geodetic { geo_to_gserialized_geog(point) } else { geo_to_gserialized_geom(point) }
                 }
                 fn geometry_to_gserialized_typed(geom: &Geometry) -> *mut meos_sys::GSERIALIZED {
-                    if $geodetic { super::tgeo::geometry_to_gserialized_geog(geom) } else { geometry_to_gserialized(geom) }
+                    if $geodetic { geometry_to_gserialized_geog(geom) } else { geometry_to_gserialized(geom) }
                 }
             }
             impl MeosEnum for $prefix {
