@@ -1,0 +1,31 @@
+# USER-APPROVED-PIN-WRITE — creating meos-rs's first pin manifest (user 2026-06-25,
+#   per-binding generator policy rollout). New file in the meos-rs repo, NOT a mutation
+#   of MobilityDB's pin tooling.
+#
+# meos-rs pin — THE canonical, dependency-ordered fold manifest (per-binding policy).
+#
+# STATE (verified this turn): meos-rs has **0 open PRs**; the binding is on `main`. There is
+# no PR fold to compose yet. The MEOS surface input is the **`sys/meos-src/source` git
+# submodule**, currently pinned to the MOVING branch `stable-1.3` (a moving target — the same
+# instability the per-binding pin solves elsewhere) on MEOS **1.3**.
+#
+# Format:  <PR#> <fork-branch>            # role.   '?' = membership/order UNCONFIRMED.
+# base = current origin/main.
+
+# ── WAVE 0 — (no open composing PRs yet) ──
+# (the canonical-generator migration below will populate this list as its PRs open.)
+
+# ════════════════════════════════════════════════════════════════════════════════════
+# PIN INPUT + RECOMMENDATIONS (committer review):
+#   * Pin the `sys/meos-src/source` submodule to an IMMUTABLE MobilityDB ecosystem-pin
+#     COMMIT, not the moving `stable-1.3` branch (matches the rest of the ecosystem).
+#   * Bump the surface 1.3 -> 1.4 (the catalog already carries the full 1.4 family surface).
+#
+# CANONICAL-GENERATOR MIGRATION (the North Star direction, user-decided 2026-06-25 —
+# "one method/logic to maintain"; see GENERATION.md): meos-rs moves from bindgen-on-headers
+# to a `meos-idl.json`-driven generator, like every other binding. generate-then-retire:
+# keep bindgen + the committed `sys/prebuilt-bindings/*.rs` working until the catalog
+# generator is proven ABI-equivalent, THEN retire bindgen. Upstream dependency: model the
+# public #define constants/flags in the MEOS-API catalog (bindgen emits 149; catalog 20) —
+# fixed at SOURCE so all bindings gain it, never hand-added in Rust.
+# ════════════════════════════════════════════════════════════════════════════════════
