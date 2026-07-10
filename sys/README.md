@@ -15,23 +15,23 @@ Select a feature depending on your setup:
 
 | Feature    | Description |
 |------------|-------------|
-| `v1_1`     | Use prebuilt bindings for MEOS 1.1. Requires MEOS 1.1 installed on your system. |
-| `v1_2`     | Use prebuilt bindings for MEOS 1.2. Requires MEOS 1.2 installed on your system. |
-| `v1_3`     | Use prebuilt bindings for MEOS 1.3. Requires MEOS 1.3 installed on your system. |
-| `bundled`  | Build MEOS 1.3 from source. No system MEOS required. Implies `bindgen`. |
-| `bindgen`  | Generate bindings at build time from your system-installed MEOS headers. |
+| `v1_1`     | Link against a system-installed MEOS. |
+| `v1_2`     | Link against a system-installed MEOS. |
+| `v1_3`     | Link against a system-installed MEOS. |
+| `bundled`  | Build MEOS 1.3 from source. No system MEOS required. |
+
+The FFI itself is the same for every feature: `src/generated.rs`, targeting the
+MEOS 1.3 API. `pkg-config` locates a system MEOS; `bundled` builds MEOS and its
+dependencies from the bundled source instead.
 
 ```toml
 # Cargo.toml
 
-# Use system-installed MEOS 1.3 with prebuilt bindings
+# Use system-installed MEOS
 meos-sys = { version = "0.1.9", features = ["v1_3"] }
 
 # Build MEOS from source (no system dependency needed)
 meos-sys = { version = "0.1.9", features = ["bundled"] }
-
-# Generate bindings from your system MEOS headers at build time
-meos-sys = { version = "0.1.9", features = ["v1_3", "bindgen"] }
 ```
 
 ## Build
@@ -54,13 +54,12 @@ bundled source as static libraries. No system MEOS installation required.
 The following system packages are required to compile:
 
 - `cmake` — build system used to compile MEOS and its dependencies (GEOS, PROJ, JSON-C, GSL)
-- `clang` / `libclang-dev` — required by `bindgen` to parse the MEOS C headers and generate Rust bindings
 - `pkg-config` — used to locate system libraries during the build
 - `sqlite3` / `libsqlite3-dev` — required by PROJ, which uses SQLite to store its coordinate reference system database
 
 ```bash
 # Debian/Ubuntu
-apt-get install cmake clang libclang-dev pkg-config sqlite3 libsqlite3-dev
+apt-get install cmake pkg-config sqlite3 libsqlite3-dev
 ```
 
 Additionally, the git submodules (JSON-C, GSL) must be initialized before building, as they are bundled as git submodules rather than downloaded at build time:
@@ -75,7 +74,14 @@ git submodule update --init --recursive
 
 Compilation will take longer due to building all dependencies from source.
 
-### Bindgen (`bindgen`)
+## Generated bindings
 
-Generates bindings at build time from your system-installed MEOS headers instead
-of using the prebuilt ones.
+`src/generated.rs` is a projection of the [MEOS-API](https://github.com/MobilityDB/MEOS-API)
+catalog `meos-idl.json` — the single source of truth from which every MEOS
+binding is derived, and the one place a MEOS header is ever parsed. `codegen.py`
+emits the `#[repr(C)]` structs, `extern "C"` functions, enums, and `#define`
+constants from that catalog:
+
+```bash
+python3 codegen.py <meos-idl.json> src/generated.rs
+```
