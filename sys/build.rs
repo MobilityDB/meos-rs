@@ -67,31 +67,8 @@ fn main() {
         }
     };
 
-    #[cfg(feature = "bindgen")]
-    generate_bindings(include_path.into()).unwrap();
-
-    #[cfg(not(feature = "bindgen"))]
+    // The FFI bindings are generated from the MEOS-API catalog (see
+    // `codegen.py`) and committed as `src/generated.rs`; the build only needs
+    // to locate and link libmeos.
     let _ = include_path;
-}
-
-#[cfg(feature = "bindgen")]
-fn generate_bindings(include_path: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    // The bindgen::Builder is the main entry point
-    // to bindgen, and lets you build up options for
-    // the resulting bindings.
-    let bindings = bindgen::Builder::default()
-        .clang_arg(format!("-I{}", include_path.to_string_lossy()))
-        // The input header we would like to generate
-        // bindings for.
-        .header("wrapper.h")
-        // Finish the builder and generate the bindings.
-        .generate()
-        // Unwrap the Result and panic on failure.
-        .expect("Unable to generate bindings");
-
-    // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = std::path::PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings.write_to_file(out_path.join("bindings.rs"))?;
-
-    Ok(())
 }

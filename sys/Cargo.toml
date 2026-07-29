@@ -21,7 +21,6 @@ proj-sys = { version = "0.27", optional = true }
 [build-dependencies]
 pkg-config = "0.3.30"
 cmake = "0.1"
-bindgen = { version = "0.72.1", optional = true }
 
 [features]
 default = []
@@ -29,5 +28,4 @@ v1_1 = []
 v1_2 = []
 v1_3 = []
 
-bindgen = ["dep:bindgen"]
-bundled = ["bindgen", "dep:meos-src", "meos-src/bundled", "dep:geos-sys", "geos-sys/static", "dep:proj-sys", "proj-sys/bundled_proj"]
+bundled = ["dep:meos-src", "meos-src/bundled", "dep:geos-sys", "geos-sys/static", "dep:proj-sys", "proj-sys/bundled_proj"]
