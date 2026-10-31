@@ -8,7 +8,7 @@ use std::{
 use chrono::{DateTime, NaiveDateTime, Utc};
 use meos::{
     meos_initialize, TFloatInstant, TFloatSequence, TGeomPoint, TGeomPointInstant,
-    TGeomPointSequence, TInstant as _, TNumber as _, TPointTrait as _, Temporal as _,
+    TGeomPointSequence, TInstant as _, TNumber as _, TGeoTrait as _, Temporal as _,
 };
 
 const MAX_INSTANTS: usize = 50000;
