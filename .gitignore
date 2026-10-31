@@ -12,3 +12,5 @@ test.py
 data/
 data/**
 src/main.rs
+# tools/refresh-from-master.sh scratch (sibling clones + libmeos prefix).
+.meos-chain/

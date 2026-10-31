@@ -13,22 +13,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-#[cfg(all(
-    feature = "v1_1",
-    not(feature = "v1_2"),
-    not(feature = "v1_3"),
-    not(feature = "bindgen")
-))]
-include!("../prebuilt-bindings/meos_1.1.rs");
-
-#[cfg(all(feature = "v1_2", not(feature = "v1_3"), not(feature = "bindgen")))]
-include!("../prebuilt-bindings/meos_1.2.rs");
-
-#[cfg(all(feature = "v1_3", not(feature = "bindgen")))]
-include!("../prebuilt-bindings/meos_1.3.rs");
-
-#[cfg(feature = "bindgen")]
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+include!("generated.rs");
 
 #[cfg(feature = "bundled")]
 extern crate geos_sys;

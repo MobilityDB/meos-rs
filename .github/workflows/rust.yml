@@ -54,6 +54,30 @@ jobs:
         cargo run --example 02_ais_read --no-default-features --features geos
         cargo run --example 03_ais_assemble --no-default-features --features geos
 
+  codegen-drift:
+    name: FFI generated from the catalog (no drift)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # Derive the MEOS catalog from the stable-1.3 line the crate pins (the 1.3 family set has
+    # no -DALL). meos-sys is a projection of it: sys/src/generated.rs must equal what codegen.py
+    # emits from the current catalog, so a MEOS API change surfaces here instead of silently
+    # rotting the committed FFI.
+    - name: Provision the MEOS catalog (stable-1.3)
+      id: provision
+      uses: MobilityDB/MEOS-API/.github/actions/provision-meos@master
+      with:
+        mobilitydb-ref: stable-1.3
+        build-libmeos: "true"
+        families: "-DCBUFFER=ON -DNPOINT=ON -DPOSE=ON"
+
+    - name: Regenerate the FFI from the catalog
+      run: python3 sys/codegen.py "${{ steps.provision.outputs.catalog-path }}" sys/src/generated.rs
+
+    - name: Assert the committed FFI matches the catalog
+      run: git diff --exit-code sys/src/generated.rs
+
   test-bundled:
     name: Test (bundled MEOS)
     runs-on: ubuntu-latest
